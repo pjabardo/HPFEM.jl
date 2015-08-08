@@ -4,63 +4,65 @@ abstract BasisFun
 abstract BasisFun1d
 import Base.length
 
-immutable ModalC0Fun1d
-    N::Int
-    bi::Bool
-    e1::Int
-    e2::Int
-    ModalC0Fun1d(N) = new(N, true, 1, N)
+
+type Basis1d
+  M::Int
+  Q::Int
+  ξ::Vector{Float64}
+  w::Vector{Float64}
+  D::Array{Float64,2}
+  ϕ::Array{Float64,2}
+  dϕ::Array{Float64,2}
+
+  function Basis1d(m, q, fun)
+    # Obter as informações da quadratura
+    ξ = zglj(q)
+    w = wglj(ξ)
+    D = dglj(ξ)
+    ϕ = zeros(q, m)
+    # Preencher as funções de base:
+    for k = 1:m
+      for i=1:q
+        ϕ[i,k] = fun(ξ[i], k, m)
+      end
+    end
+
+    # Calcular as derivadas:
+    dϕ = D * ϕ
+
+    new(m, q, ξ, w, D, ϕ, dϕ)
+  end
 end
-length(b::ModalC0Fun1d) = b.N
-function order(b::ModalC0Fun1d, p)
-    if p==1
-        o = 1
-    elseif p==2
-        o = 1
+
+num_modes(b::Basis1d) = b.M
+num_quad(b::Basis1d) = b.Q
+basis_order(b::Basis1d) = b.M-1
+
+
+function modal_C0_basis(ξ, m, M)
+    if m == 1
+      ϕ = (1 - ξ) / 2
+    elseif m == 2
+      ϕ = (1 + ξ) / 2
     else
-        o = p
+      ϕ = (1 - ξ)*(1 + ξ) / 4 * jacobi(ξ, m-2, 1, 1)
     end
-    o
-end
-order(b::ModalC0Fun1d) = N
 
-function basis(b::ModalC0Fun1d, p, x)
-    if p==1
-        y = (one(x) - x) / 2
-    elseif p==length(b)
-        y = (one(x) + x) / 2
-    else
-        y = (one(x) - x) * (one(x) + x) * jacobi(x, p-2, one(x), one(x))/4
-    end
-end
-
-function basis!(b::ModalC0Fun1d, p, x::AbstractArray, y::AbstractArray)
-    for i = 1:length(x)
-        y[i] = basis(b, p, x[i])
-    end
-    y
-end
-
-basis(b::ModalC0Fun1d, p, x::AbstractArray) = basis!(b, p, x, zeros(x))
-
-
-type Basis1d{BF,T}
-    N::Int
-    Q::Int
-    z::Array{1,T}
-    w::Array{1,T}
-    D::Array{2,T}
-    B::Array{2,T}
-
-    function Basis1d{BF<:BasisFun, T<:FloatingPoint}(b::BF, quad::Quadrature{T})
-
-        N = length(b)
-    end
+    return ϕ
 end
 
 
+Basis1d(m, q) = Basis1d(m, q, modal_C0_basis)
+Basis1d(m) = Basis1d(m, m+1)
 
 
-    
+
+
+
+
+
+
+
+
 
 
