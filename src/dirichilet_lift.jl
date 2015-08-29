@@ -6,7 +6,7 @@ type DirichiletLift
   isx::Array{Int,1}
 
   function DirichiletLift(A0, idir)
-    M = size(A,1)
+    M = size(A0,1)
     isx = trues(M)
     for i in idir
       isx[i] = false

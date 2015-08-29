@@ -1,6 +1,7 @@
 # DofMap
+abstract DofMap
 
-type DofMap
+type DofMap <: DofMap
   nb::Int
   nblsv::Int
   nbdir::Int
@@ -26,7 +27,9 @@ type DofMap
   end
 end
 
+
 export DofMap
+
 function DofMap(M, nnodes, idir, iper=false)
   nbe = 2
   if M > 2
@@ -67,6 +70,9 @@ function DofMap(M, nnodes, idir, iper=false)
 
   return DofMap(nel, nb, nd, nbe, nie, bmap)
 end
+
+num_be(dof::DofMap, e) = dof.nbe
+num_ie(dof::DofMap, e) = dof.nbi
 
 function global2local(dof::DofMap, xg::Array{Float64,1})
 
