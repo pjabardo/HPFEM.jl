@@ -4,12 +4,12 @@ abstract BBSolver
 abstract StaticCond <: LinearSolver
 
 
-type CholeskySC{T<:BBSolver} <: StaticCond
+type CholeskySC{Mat<:BBSolver, T <: Number} <: StaticCond
     dof::DofMap
-    Abb::T
-    iAii::Array{Array{Float64, 2},1}
-    Abi_iAii::Array{Array{Float64, 2},1}
-
+    Abb::Mat
+    Aii::Array{T, 3}
+    M::Array{T,3}
+end
 
 
 using Base.LinAlg.BLAS.gemm!
@@ -17,39 +17,45 @@ using Base.LinAlg.LAPACK.potrf!
 using Base.LinAlg.LAPACK.potrs!
 using ArrayViews
 
-function add_local_matrix(solver::CholeskySC, e, Ae)
+function add_local_matrix{Mat<:BBSolver, T <: Number}(solver::CholeskySC{Mat,T}, e, Ae)
     dof = solver.dof
-    iAii = solver.iAii[e]
+    Aii = view(solver.Aii, :, :)
     ni = num_bi(dof, e)
     nb = num_be(dof, e)
     for i = 1:ni
         ii = i + nb
         for k = i:ni
-            iAii[k, i] = Ae[k+nb, ii]
+            Aii[k, i] = Ae[k+nb, ii]
         end
     end
-    potrf!('L', iAii )
+    potrf!('L', Aii )
 
 
-    BiC = solver.Abi_iAii[e]
+    M = view(solver.M, :, :, e)
     for k = 1:nb
         for i = 1:ni
-            BiC[i,k] = Ae[i+nb, k]
+            M[i,k] = Ae[i+nb, k]
         end
     end
 
-    potrs!('L', iAii, BiC)
-
-    Abb = view(Ae, 1:nb, 1:nb)
+    potrs!('L', Aii, M)
+    Abb = zeros(T, nb, nb)
 
     Aib = view(Ae, (nb+1):(nb+ni), 1:nb)
 
-    gemm!('T', 'N', -1.0, BiC, Aib, 1.0, Abb)
+    gemm!('T', 'N', -1.0, M, Aib, 1.0, Abb)
 
     # Now we should assemble the global boundary-boundary matrix.
-    # assemble(solver, Abb, e)
+    assemble(solver, Abb, e)
 end
 
+
+type LU_SC{Mat<:BBSolver, T <: Number} <: StaticCond
+    dof::DofMap
+    Abb::Mat
+    Aii::Array{T, 3}
+    M::Array{T,3}
+end
 
 
 
