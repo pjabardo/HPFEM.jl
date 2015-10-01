@@ -1,7 +1,7 @@
 # DofMap
 abstract DofMap
 
-type DofMap <: DofMap
+type DofMap1d <: DofMap
   nb::Int
   nblsv::Int
   nbdir::Int
