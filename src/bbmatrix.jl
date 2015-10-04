@@ -2,10 +2,10 @@
 abstract BBSolver
 
 "Global boundary-boundary Symmetric Positive-Definite matrix"
-abstract BBSymm <: BBSolver
+abstract BBSym <: BBSolver
 
 "Global boundary-boundary symmetric tridiagonal matrices"
-type BBTriSymm{T<:Number} <: BBSymm
+type BBTriSym{T<:Number} <: BBSym
     "Number of boundary modes"
     nb::Int
     "Number of boundary modes that should be solved"
@@ -14,7 +14,7 @@ type BBTriSymm{T<:Number} <: BBSymm
     D::Array{T,1}
     "Sub-diagonal elements"
     E::Array{T,1}
-    function BBTriSymm(nb, nbslv)
+    function BBTriSym(nb, nbslv)
         D = zeros(T,nbslv)
         E = zeros(T, nbslv-1)
         new(nb, nbslv, D, E)
@@ -25,15 +25,15 @@ using Base.LinAlg.LAPACK.pttrf!
 using Base.LinAlg.LAPACK.pttrs!
 
 "LU (or Choleksy) decomposition of boundary-boundary system"
-trf!(Ag::BBTriSymm) = pttrf!(Ag.D, Ag.E)
+trf!(Ag::BBTriSym) = pttrf!(Ag.D, Ag.E)
 
 "Solving linear system using LU (or Cholesky) decomposition"
-trs!(Ag::BBTriSymm, x) = pttrs!(Ag.D, Ag.E, x)
+trs!(Ag::BBTriSym, x) = pttrs!(Ag.D, Ag.E, x)
 
 """
 Assembles the global boundary-boundary matrix.
 """
-function assemble!{T}(Ag::BBTriSymm{T}, Ae, m)
+function assemble!{T}(Ag::BBTriSym{T}, Ae, m)
     np1 = Ag.nbslv + 1
     D = Ag.D
     E = Ag.E

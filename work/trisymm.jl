@@ -51,7 +51,7 @@ function exemplo_tri2(n=5)
     ne = n-1
 
     Ag = zeros(n,n)
-    Atri = HPFEM.BBTriSymm{Float64}(n, n)
+    Atri = HPFEM.BBTriSym{Float64}(n, n)
     for e = 1:ne
         Ae = rand_matrix(2)
         m = [e,e+1]
