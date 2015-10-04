@@ -122,3 +122,17 @@ function trf!(Ag::BBTri)
 end
 trs!(Ag::BBTri, x) = gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, x)
 
+
+type BBTriP{T<:Number} <: BBSolver
+    "Number of independent boundary modes"
+    n::Int
+    Dl::Vector{T}
+    D::Vector{T}
+    Du::Vector{T}
+    Du2::Vector{T}
+    x2::Vector{T}
+    ipiv::Vector{T}
+    BBTriP(n) = new(n, zeros(T,n), zeros(T,n), zeros(T,n)
+end
+
+function assemble!{T}(Ag::BBTri{T}, Ae, m)
