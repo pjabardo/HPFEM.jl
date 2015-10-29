@@ -196,7 +196,6 @@ type BBTriP{T<:Number} <: BBSolver
     end
             
 end
-using Debug
 
 function assemble!{T}(Ag::BBTriP{T}, Ae, m)
     per = Ag.periodic
@@ -282,3 +281,118 @@ function trs!(Ag::BBTriP, x)
     end
 end
 
+
+
+type BBSymTriP{T<:Number} <: BBSym
+    "Number of independent boundary modes"
+    nb::Int
+    "Number of boundary modes that should be solved"
+    nbslv::Int
+    "Is the system periodic"
+    periodic::Bool
+    "Main Diagonal"
+    D::Vector{T}
+    "Upper diagonal"
+    Du::Vector{T}
+    "Auxiliary memory"
+    x2::Vector{T}
+    an1::T
+    cn::T
+    cn1::T
+    function BBSymTriP(nb, nbslv, periodic=false)
+        if !periodic
+            D = zeros(T,nbslv)
+            Du = zeros(T, nbslv-1)
+            new(nb, nbslv, periodic, D, Du)
+        else
+            nbslv = nb-1
+            D = zeros(T,nb-1)
+            Du = zeros(T,nb-2)
+            x2 = zeros(T,nb-1)
+            new(nb, nbslv, periodic, D, Du, x2, zero(T), zero(T), zero(T))
+        end
+    end
+end
+
+
+
+function assemble!{T<:Number}(Ag::BBSymTriP{T}, Ae, m)
+    per = Ag.periodic
+
+    m1 = m[1]
+    m2 = m[2]
+    
+    nb = Ag.nb
+    if per
+        nbslv = Ag.nb-1
+    else
+        nbslv = Ag.nbslv
+    end    
+
+    ig = m1
+    kg = m2
+
+    D = Ag.D
+    Du = Ag.Du
+
+    if !per || (m2 < nb && m2 != 1) # Not periodic or not the last element (if periodic)
+
+        np1 = Ag.nbslv + 1
+        
+        
+        if ig < np1
+            D[ig] += Ae[1,1]
+            if kg < np1
+                D[kg] += Ae[2,2]
+                if ig < kg
+                    Du[ig] += Ae[1,2]
+                elseif kg < ig
+                    Du[kg] = Ae[2,1]
+                end
+            end
+        elseif kg < np1
+            D[kg] += Ae[2,2]
+        end
+    elseif m2 == nb # It is periodic AND it is the next to last
+        Ag.an1   += Ae[2,2]
+        Ag.cn    += Ae[1,2]
+        D[nbslv] += Ae[1,1]
+    elseif m2 == 1
+        Ag.cn1   += Ae[1,2]
+        D[1]     += Ae[2,2]
+        Ag.an1   += Ae[1,1]
+    end
+    
+end
+
+
+
+
+function trf!(Ag::BBSymTriP)
+    pttrf!(Ag.D, Ag.Du)
+    return
+end
+function trs!(Ag::BBSymTriP, x)
+    if !Ag.periodic
+        pttrs!(Ag.D, Ag.Du, x)
+    else
+        n = Ag.nb
+        n1 = n-1
+        qn1 = view(x, 1:n1, :)
+        nrhs = size(x,2)
+        pttrs!(Ag.D, Ag.Du, qn1)
+        x2 = Ag.x2
+        for i = 1:nrhs
+            fill!(x2, 0)
+            x2[1] = -Ag.cn1
+            x2[n1] = -Ag.cn
+            pttrs!(Ag.D, Ag.Du, x2)
+            x[n,i] = (x[n,i] - Ag.cn1*qn1[1,i] - Ag.cn*qn1[n1,i]) /
+            (Ag.an1 + Ag.cn1*x2[1] + Ag.cn*x2[n1])
+            for k = 1:n1
+                x[k,i] += x[n,i]*x2[k]
+            end
+        end
+        x
+    end
+end
