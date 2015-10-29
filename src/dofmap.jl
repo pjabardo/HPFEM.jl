@@ -12,7 +12,7 @@ type DofMap1d <: DofMap
   bmap::Array{Int,2}
   map::Array{Int,2}
 
-  function DofMap(nel, nb, nbdir, nbe, nie, bmap::Array{Int,2})
+  function DofMap1d(nel, nb, nbdir, nbe, nie, bmap::Array{Int,2})
     nbslv = nb - nbdir
     nloc = nie + nbe
     mp = zeros(Int, nloc, nel)
@@ -28,9 +28,9 @@ type DofMap1d <: DofMap
 end
 
 
-export DofMap
+export DofMap1d
 
-function DofMap(M, nnodes, idir, iper=false)
+function DofMap1d(M, nnodes, idir, iper=false)
   nbe = 2
   if M > 2
     nie = M-2
