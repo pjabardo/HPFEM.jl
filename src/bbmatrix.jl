@@ -1,6 +1,39 @@
 "Abstract type that deals with global boundary-boundary matrices"
 abstract BBSolver
 
+type BBMatrix{T<:Number} <: BBSolver
+    nb::Int
+    nbslv::Int
+    A::Array{T,2}
+    ipiv::Array{T,1}
+    BBMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
+end
+
+function assemble!{T<:Number}(Ag::BBMatrix{T}, Ae, m)
+
+    nm = length(m)
+    n1 = Ag.nbslv+1
+    for i = 1:nm
+        ig = m[ig]
+        if ig < n1
+            for k = 1:nm
+                kg = m[kg]
+                if kg < n1
+                    Ag.A[kg,ig] += Ae[k,i]
+                end
+            end
+        end
+    end
+end
+
+using Base.LinaAlg.LAPACK.getrf!
+function trf!(Ag::BBMatrix)
+    A, ipiv, info = getrf(Ag.A)
+    Ag.ipiv = ipiv
+end
+trs!(Ag::BBMatrix, x) = getrs!('N', Ag.A, Ag.ipiv, x)
+
+
 "Global boundary-boundary Symmetric Positive-Definite matrix"
 abstract BBSym <: BBSolver
 
