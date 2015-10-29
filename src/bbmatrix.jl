@@ -1,11 +1,12 @@
 "Abstract type that deals with global boundary-boundary matrices"
 abstract BBSolver
+using Base.LinAlg.LAPACK.BlasInt
 
 type BBMatrix{T<:Number} <: BBSolver
     nb::Int
     nbslv::Int
     A::Array{T,2}
-    ipiv::Array{T,1}
+    ipiv::Array{BlasInt,1}
     BBMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
 end
 
@@ -14,10 +15,10 @@ function assemble!{T<:Number}(Ag::BBMatrix{T}, Ae, m)
     nm = length(m)
     n1 = Ag.nbslv+1
     for i = 1:nm
-        ig = m[ig]
+        ig = m[i]
         if ig < n1
             for k = 1:nm
-                kg = m[kg]
+                kg = m[k]
                 if kg < n1
                     Ag.A[kg,ig] += Ae[k,i]
                 end
@@ -26,9 +27,10 @@ function assemble!{T<:Number}(Ag::BBMatrix{T}, Ae, m)
     end
 end
 
-using Base.LinaAlg.LAPACK.getrf!
+using Base.LinAlg.LAPACK.getrf!
+using Base.LinAlg.LAPACK.getrs!
 function trf!(Ag::BBMatrix)
-    A, ipiv, info = getrf(Ag.A)
+    A, ipiv, info = getrf!(Ag.A)
     Ag.ipiv = ipiv
 end
 trs!(Ag::BBMatrix, x) = getrs!('N', Ag.A, Ag.ipiv, x)
@@ -38,7 +40,7 @@ trs!(Ag::BBMatrix, x) = getrs!('N', Ag.A, Ag.ipiv, x)
 abstract BBSym <: BBSolver
 
 "Global boundary-boundary symmetric tridiagonal matrices"
-type BBTriSym{T<:Number} <: BBSym
+type BBSymTri{T<:Number} <: BBSym
     "Number of boundary modes"
     nb::Int
     "Number of boundary modes that should be solved"
@@ -47,7 +49,7 @@ type BBTriSym{T<:Number} <: BBSym
     D::Array{T,1}
     "Sub-diagonal elements"
     E::Array{T,1}
-    function BBTriSym(nb, nbslv)
+    function BBSymTri(nb, nbslv)
         D = zeros(T,nbslv)
         E = zeros(T, nbslv-1)
         new(nb, nbslv, D, E)
@@ -58,15 +60,15 @@ using Base.LinAlg.LAPACK.pttrf!
 using Base.LinAlg.LAPACK.pttrs!
 
 "LU (or Choleksy) decomposition of boundary-boundary system"
-trf!(Ag::BBTriSym) = pttrf!(Ag.D, Ag.E)
+trf!(Ag::BBSymTri) = pttrf!(Ag.D, Ag.E)
 
 "Solving linear system using LU (or Cholesky) decomposition"
-trs!(Ag::BBTriSym, x) = pttrs!(Ag.D, Ag.E, x)
+trs!(Ag::BBSymTri, x) = pttrs!(Ag.D, Ag.E, x)
 
 """
 Assembles the global boundary-boundary matrix.
 """
-function assemble!{T}(Ag::BBTriSym{T}, Ae, m)
+function assemble!{T}(Ag::BBSymTri{T}, Ae, m)
     np1 = Ag.nbslv + 1
     D = Ag.D
     E = Ag.E
@@ -86,7 +88,6 @@ function assemble!{T}(Ag::BBTriSym{T}, Ae, m)
 
 end
 
-using Base.LinAlg.LAPACK.BlasInt
 
 "Global boundary-boundary tridiagonal matrices"
 type BBTri{T<:Number} <: BBSolver
@@ -177,26 +178,26 @@ type BBTriP{T<:Number} <: BBSolver
     cn::T
     cn1::T
     Du2::Vector{T}
-    ipiv::Vector{T}
+    ipiv::Vector{BlasInt}
     function BBTriP(nb, nbslv, periodic=false)
         if !periodic
             D = zeros(T,nbslv)
             Dl = zeros(T, nbslv-1)
             Du = zeros(T, nbslv-1)
-            new(nb, nbslv, D, Dl, Du)
+            new(nb, nbslv, periodic, Dl, D, Du)
         else
             nbslv = nb-1
             D = zeros(T,nb-1)
             Dl = zeros(T,nb-2)
             Du = zeros(T,nb-2)
             x2 = zeros(T,nb-1)
-            zt = zero(T)
-            new(nb, nbslv, periodic, Dl, D, Du, x2, zt, zt, zt, zt, zt)
+            new(nb, nbslv, periodic, Dl, D, Du, x2, zero(T), zero(T), zero(T), zero(T), zero(T))
         end
     end
             
 end
-                    
+using Debug
+
 function assemble!{T}(Ag::BBTriP{T}, Ae, m)
     per = Ag.periodic
 
