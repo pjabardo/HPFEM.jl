@@ -9,11 +9,25 @@ nmodes{T<:BasisFun1d}(b::T) = b.nmodes
 isbndryint{T<:BasisFun}(b::T) = false
 isbndryint{T<:BasisFun}(::Type{T}) = false
 
-bndry_idx{T<:BasisFun}(b::T) = b.bndry
-nbndry{T<:BasisFun}(b::T) = length(b.bndry)
+bndry_idx{T<:BasisFun}(b::T) = bndry_idx(b.lnum)
+nbndry{T<:BasisFun}(b::T) = nbndry(b.lnum)
 
-interior_idx{T<:BasisFun}(b::T) = b.interior
-ninterior{T<:BasisFun}(b::T) = length(b.interior)
+interior_idx{T<:BasisFun}(b::T) = bndry_idx(b.lnum)
+ninterior{T<:BasisFun}(b::T) = ninterior(b.lnum)
+
+seq2bi!{T}(b::BasisFun, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(b.lnum, x, y)
+seq2bi{T}(b::BasisFun, x::AbstractVector{T}) = seq2bi(b.lnum, x)
+bi2seq!{T}(b::BasisFun, x::AbstractVector{T}, y::AbstractVector{T}) = bi2seq!(b.lnum, x, y)
+bi2seq{T}(b::BasisFun, x::AbstractVector{T}) = bi2seq(b.lnum, x)
+bi2seq!{T}(b::BasisFun, xb::AbstractVector{T}, xi::AbstractVector{T}, y::AbstractVector{T}) =
+    bi2seq!(b.lnum, xb, xi, y)
+bi2seq{T}(b::BasisFun, xb::AbstractVector{T}, xi::AbstractVector{T}) = bi2seq(b.lnum, xb, xi)
+seq2b!{T}(b::BasisFun, x::AbstractVector{T}, y::AbstractVector{T}) = seq2b!(b.lnum, x, y)
+seq2i!{T}(b::BasisFun, x::AbstractVector{T}, y::AbstractVector{T}) = seq2i!(b.lnum, x, y)
+seq2b{T}(b::BasisFun, x::AbstractVector{T}) = seq2b(b.lnum, x)
+seq2i{T}(b::BasisFun, x::AbstractVector{T}) = seq2i(b.lnum, x)
+
+
 
 function basis1d!{T<:BasisFun1d}(b::T, ξ::AbstractArray, y::AbstractArray, p::Integer)
     for i = 1:length(ξ)
@@ -30,10 +44,9 @@ call{T<:BasisFun1d, N<:Number}(b::T, ξ::AbstractArray{N}, p::Integer) = basis1d
 
 immutable ModalC01d <: BasisFun1d
     nmodes::Int
-    bndry::Array{Int,1}
-    interior::Array{Int,1}
+    lnum::LocalNumSys
 end
-ModalC01d(n) = ModalC01d(n, [1,2], [3:n;])
+ModalC01d(n) = ModalC01d(n, LocalNumSys([1,2], [3:n;]))
 
 isbndryint(b::ModalC01d) = true
 isbndryint(::Type{ModalC01d}) = true
@@ -54,19 +67,21 @@ end
 
 immutable Lagrange1d{T<:Number} <: BasisFun1d
     nmodes::Int
-    bndry::Array{Int,1}
-    interior::Array{Int,1}
+    lnum::LocalNumSys
     z::Array{T,1}
 end
 
 function Lagrange1d{T<:Number}(n, ::Type{T}=Float64)
     z = Jacobi.zglj(n, 0, 0, T)
-    Lagrange1d{T}(n, [1,n], [2:n-1;], z)
+    Lagrange1d{T}(n, LocalNumSys([1,n], [2:n-1;]), z)
 end
 
 isbndryint(b::Lagrange1d) = true
 basis1d{T<:Number}(b::Lagrange1d{T}, ξ::T, p) = Jacobi.lagrange(p, ξ, b.z)
-    
+
+import Base.convert
+convert(::Type{LocalNumSys}, b::BasisFun) = b.lnum
+
 type Basis1d{T<:Number,B<:BasisFun1d}
     M::Int
     Q::Int
@@ -118,8 +133,8 @@ end
 
 qnodes(b::Basis1d) = b.ξ
 
-num_modes(b::Basis1d) = b.M
-num_quad(b::Basis1d) = b.Q
+nmodes(b::Basis1d) = b.M
+nquad(b::Basis1d) = b.Q
 basis_order(b::Basis1d) = b.M-1
 weights(b::Basis1d) = b.w
 basis(b::Basis1d) = b.ϕ
@@ -138,13 +153,31 @@ call(b::Basis1d, x, p) = basis1d(b.b, x, p)
 Basis1d(m, q) = Basis1d(ModalC01d(m), q)
 Basis1d(m) = Basis1d(m, m+1)
 
+nbndry(b::Basis1d) = nbndry(b.b)
+ninterior(b::Basis1d) = ninterior(b.b)
+
+bndry_idx(b::Basis1d) = bndry_idx(b.b)
+interior_idx(b::Basis1d) = interior_idx(b.b)
+
+seq2bi!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(b.b.lnum, x, y)
+seq2bi{T}(b::Basis1d, x::AbstractVector{T}) = seq2bi(b.b.lnum, x)
+bi2seq!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = bi2seq!(b.b.lnum, x, y)
+bi2seq{T}(b::Basis1d, x::AbstractVector{T}) = bi2seq(b.b.lnum, x)
+bi2seq!{T}(b::Basis1d, xb::AbstractVector{T}, xi::AbstractVector{T}, y::AbstractVector{T}) =
+    bi2seq!(b.b.lnum, xb, xi, y)
+bi2seq{T}(b::Basis1d, xb::AbstractVector{T}, xi::AbstractVector{T}) = bi2seq(b.b.lnum, xb, xi)
+seq2b!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2b!(b.b.lnum, x, y)
+seq2i!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2i!(b.b.lnum, x, y)
+seq2b{T}(b::Basis1d, x::AbstractVector{T}) = seq2b(b.b.lnum, x)
+seq2i{T}(b::Basis1d, x::AbstractVector{T}) = seq2i(b.b.lnum, x)
+
 
 function project(b::Basis1d, f::AbstractVector)
 
   ϕ = basis(b)
   w = weights(b)
-  Q = num_quad(b)
-  M = num_modes(b)
+  Q = nquad(b)
+  M = nmodes(b)
   iM = b.imass
   fh = zeros(M)
 
@@ -167,8 +200,8 @@ project(b::Basis1d, f::Function) = project(b, f(qnodes(b)))
 
 
 function mass_matrix(b::Basis1d)
-  M = num_modes(b)
-  Q = num_quad(b)
+  M = nmodes(b)
+  Q = nquad(b)
   ϕ = basis(b)
   w = weights(b)
   mass = zeros(M,M)
@@ -190,8 +223,8 @@ end
 
 
 function stiff_matrix(b::Basis1d, mat)
-  M = num_modes(b)
-  Q = num_quad(b)
+  M = nmodes(b)
+  Q = nquad(b)
   dϕ = dbasis(b)
   w = weights(w)
 

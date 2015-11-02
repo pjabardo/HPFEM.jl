@@ -1,6 +1,7 @@
 module HPFEM
 
 # package code goes here
+include("localnum.jl")
 include("basis1d.jl")
 include("element1d.jl")
 include("dofmap.jl")
