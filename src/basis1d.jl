@@ -82,6 +82,21 @@ basis1d{T<:Number}(b::Lagrange1d{T}, ξ::T, p) = Jacobi.lagrange(p, ξ, b.z)
 import Base.convert
 convert(::Type{LocalNumSys}, b::BasisFun) = b.lnum
 
+type QuadType{T<:Number}
+    Q::Int
+    z::Vector{T}
+    w::Vector{T}
+    D::Matrix{T}
+end
+function QuadType{T<:Number,QT<:QUADRATURE_TYPE}(q::Int, ::Type{QT}=GLJ, ::Type{T}=Float64, a=0, b=0)
+    z = qzeros(QT, q, a, b, T)
+    w = qweights(QT, z, a, b)
+    D = qdiff(QT, z, a, b)
+    QuadType(q, z, w, D)
+end
+
+
+
 type Basis1d{T<:Number,B<:BasisFun1d}
     M::Int
     Q::Int
@@ -91,43 +106,45 @@ type Basis1d{T<:Number,B<:BasisFun1d}
     ϕ::Array{T,2}
     dϕ::Array{T,2}
     imass::Cholesky{T}
-    b::B
+    bas::B
+    quad::QuadType
 end
 
-function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::Integer, ::Type{T}=Float64)
-        # Create the basis function
-        m = nmodes(b)
-        # Obter as informações da quadratura
-        ξ = zglj(q)
-        w = wglj(ξ)
-        D = dglj(ξ)
-        ϕ = zeros(q, m)
-        # Preencher as funções de base:
-        
-        for k = 1:m
-            for i=1:q
-                ϕ[i,k] = b(ξ[i], k)
-            end
+function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
+    # Create the basis function
+    m = nmodes(b)
+    # Obter as informações da quadratura
+    Q = q.Q
+    ξ = q.z
+    w = q.w
+    D = q.D
+    ϕ = zeros(T, Q, m)
+    # Preencher as funções de base:
+    
+    for k = 1:m
+        for i=1:Q
+            ϕ[i,k] = b(ξ[i], k)
         end
-
-        # Calcular as derivadas:
-        dϕ = D * ϕ
-
-        # calcular a matrix de massa
-        mass = zeros(m,m)
-        for k = 1:m
-            for i = k:m
-                mm = 0.0
-                for j = 1:q
-                    mm += ϕ[j,i] * ϕ[j,k] * w[j]
-                end
-                mass[i,k] = mm
-                mass[k,i] = mm
+    end
+    
+    # Calcular as derivadas:
+    dϕ = D * ϕ
+    
+    # calcular a matrix de massa
+    mass = zeros(m,m)
+    for k = 1:m
+        for i = k:m
+            mm = 0.0
+            for j = 1:Q
+                mm += ϕ[j,i] * ϕ[j,k] * w[j]
             end
+            mass[i,k] = mm
+            mass[k,i] = mm
         end
-        
-        imass = cholfact(mass)
-        Basis1d{T,B}(m, q, ξ, w, D, ϕ, dϕ, imass, b)
+    end
+    
+    imass = cholfact(mass)
+    Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, imass, b, q)
 end
 
 
@@ -143,33 +160,33 @@ dbasis(b::Basis1d) = b.dϕ
 
 
 
-basis1d(b::Basis1d, x, p) = basis1d(b.b, x, p)
+basis1d(b::Basis1d, x, p) = basis1d(b.bas, x, p)
 
-basis1d!(b::Basis1d, x::AbstractArray, y::AbstractArray, p) = basis1d!(b.b, x, y, p)
+basis1d!(b::Basis1d, x::AbstractArray, y::AbstractArray, p) = basis1d!(b.bas, x, y, p)
 basis1d(b::Basis1d, x::AbstractArray, p) = basis1d!(b, x, similar(x), p)
 
-call(b::Basis1d, x, p) = basis1d(b.b, x, p)
+call(b::Basis1d, x, p) = basis1d(b.bas, x, p)
 
 Basis1d(m, q) = Basis1d(ModalC01d(m), q)
 Basis1d(m) = Basis1d(m, m+1)
 
-nbndry(b::Basis1d) = nbndry(b.b)
-ninterior(b::Basis1d) = ninterior(b.b)
+nbndry(b::Basis1d) = nbndry(b.bas)
+ninterior(b::Basis1d) = ninterior(b.bas)
 
-bndry_idx(b::Basis1d) = bndry_idx(b.b)
-interior_idx(b::Basis1d) = interior_idx(b.b)
+bndry_idx(b::Basis1d) = bndry_idx(b.bas)
+interior_idx(b::Basis1d) = interior_idx(b.bas)
 
-seq2bi!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(b.b.lnum, x, y)
-seq2bi{T}(b::Basis1d, x::AbstractVector{T}) = seq2bi(b.b.lnum, x)
-bi2seq!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = bi2seq!(b.b.lnum, x, y)
-bi2seq{T}(b::Basis1d, x::AbstractVector{T}) = bi2seq(b.b.lnum, x)
+seq2bi!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(b.bas.lnum, x, y)
+seq2bi{T}(b::Basis1d, x::AbstractVector{T}) = seq2bi(b.bas.lnum, x)
+bi2seq!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = bi2seq!(b.bas.lnum, x, y)
+bi2seq{T}(b::Basis1d, x::AbstractVector{T}) = bi2seq(b.bas.lnum, x)
 bi2seq!{T}(b::Basis1d, xb::AbstractVector{T}, xi::AbstractVector{T}, y::AbstractVector{T}) =
-    bi2seq!(b.b.lnum, xb, xi, y)
-bi2seq{T}(b::Basis1d, xb::AbstractVector{T}, xi::AbstractVector{T}) = bi2seq(b.b.lnum, xb, xi)
-seq2b!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2b!(b.b.lnum, x, y)
-seq2i!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2i!(b.b.lnum, x, y)
-seq2b{T}(b::Basis1d, x::AbstractVector{T}) = seq2b(b.b.lnum, x)
-seq2i{T}(b::Basis1d, x::AbstractVector{T}) = seq2i(b.b.lnum, x)
+    bi2seq!(b.bas.lnum, xb, xi, y)
+bi2seq{T}(b::Basis1d, xb::AbstractVector{T}, xi::AbstractVector{T}) = bi2seq(b.bas.lnum, xb, xi)
+seq2b!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2b!(b.bas.lnum, x, y)
+seq2i!{T}(b::Basis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2i!(b.bas.lnum, x, y)
+seq2b{T}(b::Basis1d, x::AbstractVector{T}) = seq2b(b.bas.lnum, x)
+seq2i{T}(b::Basis1d, x::AbstractVector{T}) = seq2i(b.bas.lnum, x)
 
 
 function project(b::Basis1d, f::AbstractVector)
