@@ -1,7 +1,9 @@
-abstract AbstractElement1d
-    
+
+
+
 type Element1d{Bas <: Basis1d}
-    basis::Basis1d
+    id::Int
+    basis::Bas
     a::Float64
     b::Float64
     J::Float64

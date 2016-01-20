@@ -15,8 +15,9 @@ $$
 """
 type WeakForm{Dof<:DofMap}
     A::Vector{BilinearForm}
-    b::Vector{LinearForm}
-    dofm::Dof
+    Ab::Dict{Int,Vector{BilinearForm}}
+    F::Vector{LinearForm}
+    Fb::Dict{Int,Vector{LinearForm}}
     dlift::Dict{Int,DirichiletLift}
 end
 
