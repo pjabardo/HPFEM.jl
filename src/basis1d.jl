@@ -28,7 +28,11 @@ seq2b{T}(b::BasisFun, x::AbstractVector{T}) = seq2b(b.lnum, x)
 seq2i{T}(b::BasisFun, x::AbstractVector{T}) = seq2i(b.lnum, x)
 
 
+"""
+Compute the value of mode `i` at all points ξ
 
+The values are returned on array `y`.
+"""
 function basis1d!{T<:BasisFun1d}(b::T, ξ::AbstractArray, y::AbstractArray, p::Integer)
     for i = 1:length(ξ)
         y[i] = basis1d(b, ξ[i], p)
@@ -167,8 +171,8 @@ basis1d(b::Basis1d, x::AbstractArray, p) = basis1d!(b, x, similar(x), p)
 
 call(b::Basis1d, x, p) = basis1d(b.bas, x, p)
 
-Basis1d(m, q) = Basis1d(ModalC01d(m), q)
-Basis1d(m) = Basis1d(m, m+1)
+Basis1d(m::Int, q::Int) = Basis1d(ModalC01d(m), QuadType(q))
+Basis1d(m::Int) = Basis1d(m, m+1)
 
 nbndry(b::Basis1d) = nbndry(b.bas)
 ninterior(b::Basis1d) = ninterior(b.bas)
