@@ -95,7 +95,7 @@ function Lagrange1d{T<:Number}(n, ::Type{T}=Float64)
 end
 
 function Lagrange1d{T<:Number}(x::AbstractVector{T}, ::Type{T}=Float64)
-    n = length(z)
+    n = length(x)
     z = zeros(T, n)
 
     for i = 1:n
@@ -111,7 +111,7 @@ function Lagrange1d{T<:Number}(x::AbstractVector{T}, ::Type{T}=Float64)
             append!(iidx, [i])
         end
     end
-    Lagrange1d(bidx, iidx)
+    Lagrange1d(n, LocalNumSys1d(bidx, iidx), z)
 end
 
 

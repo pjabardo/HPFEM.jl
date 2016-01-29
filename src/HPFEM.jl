@@ -2,6 +2,7 @@ module HPFEM
 
 using Jacobi
 using Base.LinAlg
+using Polynomials
 
 import Base.length
 import Base.call
