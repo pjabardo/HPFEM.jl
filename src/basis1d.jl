@@ -38,6 +38,9 @@ type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d
     "Derivative of basis functions at quadrature nodes"
     dϕ::Array{T,2}
 
+    "Weight X Basis"
+    wϕ::Array{T,2}
+    
     "Inverse of mass matrix"
     imass::Cholesky{T}
 
@@ -58,11 +61,14 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     w = q.w
     D = q.D
     ϕ = zeros(T, Q, m)
+    wϕ = zeros(T, Q, m)
+    
     # Preencher as funções de base:
     
     for k = 1:m
         for i=1:Q
             ϕ[i,k] = b(ξ[i], k)
+            wϕ[i,k] = w[i] * ϕ[i,k]
         end
     end
     
@@ -70,10 +76,10 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     dϕ = D * ϕ
     
     # calcular a matrix de massa
-    mass = std_mass_matrix1d(ϕ, w)
+    mass = ϕ' * wϕ #std_mass_matrix1d(ϕ, w)
     
     imass = cholfact(mass)
-    Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, imass, b)
+    Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, wϕ, imass, b)
 end
 
 
