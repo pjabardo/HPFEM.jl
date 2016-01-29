@@ -5,8 +5,11 @@ abstract BasisFun1d <: BasisFun
 " Total number of modes of a basis function "
 nmodes{T<:BasisFun}(b::T) = b.nmodes
 
+
+" Total number of modes of a basis function "
 length{T<:BasisFun1d}(b::T) = nmodes(b)
 
+" Total number of modes of a basis function "
 size{T<:BasisFun1d}(b::T) = (nmodes(b),)
 
 " Can the modes be decoupled into boundary/interior modes? "
@@ -52,7 +55,9 @@ basis1d{T<:BasisFun1d}(b::T, ξ::AbstractArray, p::Integer) = basis1d!(b, ξ, si
 call{T<:BasisFun1d, N<:Number}(b::T, ξ::N, p::Integer) = basis1d(b, ξ, p)
 call{T<:BasisFun1d, N<:Number}(b::T, ξ::AbstractArray{N}, p::Integer) = basis1d(b, ξ, p)
 
-
+"""
+Karniadakis/Sherwin 1D modal polynomial basis.
+"""
 immutable ModalC01d <: BasisFun1d
     nmodes::Int
     lnum::LocalNumSys1d
@@ -74,6 +79,9 @@ function basis1d{T<:Number}(b::ModalC01d, ξ::T, p::Integer)
     return ϕ
 end
 
+"""
+Legendre orthogonal basis
+"""
 immutable Legendre1d <: BasisFun1d
     nmodes::Int
     lnum::LocalNumSys1d
@@ -82,18 +90,26 @@ Legendre1d(n) = Legendre1d(n+1, LocalNumSys1d( [1:(n+1);], Int[]) )
 
 basis1d{T<:Number}(b::Legendre1d, ξ::T, p::Integer) = legendre(ξ, p-1)
     
-
+"""
+Lagrange polynomial basis.
+"""
 immutable Lagrange1d{T<:Number} <: BasisFun1d
     nmodes::Int
     lnum::LocalNumSys1d
     z::Array{T,1}
 end
 
+"""
+Build a Lagrange polynomial basis at Gauss-Lobatto nodes.
+"""
 function Lagrange1d{T<:Number}(n, ::Type{T}=Float64)
     z = Jacobi.zglj(n, 0, 0, T)
     Lagrange1d{T}(n, LocalNumSys1d([1,n], [2:n-1;]), z)
 end
 
+"""
+Build a Lagrange polynomial basis at any set of distinct nodes.
+"""
 function Lagrange1d{T<:Number}(x::AbstractVector{T}, ::Type{T}=Float64)
     n = length(x)
     z = zeros(T, n)
