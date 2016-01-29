@@ -251,3 +251,7 @@ dqbasis(b::SpecElem1d) = b.D
 project!(b::SpecElem1d, f::AbstractVector, u::AbstractVector) = copy!(u, f)
 project(b::SpecElem1d, f::AbstractVector) = project!(b, f, similar(f))
 project(b::SpecElem1d, f::Function) = project(b, f(qnodes(b)))
+
+
+mass_matrix(b::SpecElem1d) = diagm(qweights(b))
+
