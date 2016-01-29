@@ -45,8 +45,6 @@ type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d
 
     "Actual basis function. Used to compute the basis function"
     bas::B
-    
-    quad::QuadType
 end
 
     
@@ -77,7 +75,7 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     mass = std_mass_matrix1d(ϕ, w)
     
     imass = cholfact(mass)
-    Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, imass, b, q)
+    Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, imass, b)
 end
 
 
@@ -105,12 +103,12 @@ dqbasis(b::Basis1d) = b.dϕ
 
 
 
-basis1d(b::Basis1d, x, p) = basis1d(basis(b), x, p)
+basis1d(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
 
-basis1d!(b::Basis1d, x::AbstractArray, y::AbstractArray, p) = basis1d!(basis(b), x, y, p)
-basis1d(b::Basis1d, x::AbstractArray, p) = basis1d!(b, x, similar(x), p)
+basis1d!(b::GenBasis1d, x::AbstractArray, y::AbstractArray, p) = basis1d!(basis(b), x, y, p)
+basis1d(b::GenBasis1d, x::AbstractArray, p) = basis1d!(b, x, similar(x), p)
 
-call(b::Basis1d, x, p) = basis1d(basis(b), x, p)
+call(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
 
 Basis1d(m::Int, q::Int) = Basis1d(ModalC01d(m), QuadType(q))
 Basis1d(m::Int) = Basis1d(m, m+1)
@@ -157,35 +155,35 @@ end
 
 
 """
-mass_matrix{T<:Number}(b::Basis1d{T}) =  std_mass_matrix1d(qbasis(b), qweights(b))
+mass_matrix(b::GenBasis1d) =  std_mass_matrix1d(qbasis(b), qweights(b))
 
 
 """
 Project a function know at quadrature nodes to a basis
 """
-function project(b::Basis1d, f::AbstractVector)
+function project!(b::Basis1d, f::AbstractVector, u::AbstractVector)
 
   ϕ = qbasis(b)
   w = qweights(b)
   Q = nquad(b)
   M = nmodes(b)
   iM = b.imass
-  fh = zeros(M)
 
   for k = 1:M
-    F = 0.0
+    F = zero(f)
     for q = 1:Q
       F += f[q] * ϕ[q,k] * w[q]
     end
-    fh[k] = F
+    u[k] = F
   end
 
-  A_ldiv_B!(iM, fh)
+  A_ldiv_B!(iM, u)
 
-  return fh
+  return u
 
 end
 
+project(b::Basis1d, f::AbstractVector) = project!(b, f, similar(f, nmodes(b)))
 """
 Project a function  to a basis
 
@@ -221,9 +219,37 @@ end
 
 
 type SpecElem1d{T<:Number} <: GenBasis1d
+    "Number of quadrature nodes"
+    Q::Int
+
+    "Quadrature nodes"
+    ξ::Vector{T}
+
+    "Quadrature weights"
+    w::Vector{T}
+
+    "Derivative matrix for functions known at quadrature nodes"
+    D::Array{T,2}
+
+    "Actual basis function. Used to compute the basis function"
+    bas::Lagrange1d{T}
 
     
 end
+
+function SpecElem1d{T<:Number}(n::Integer, ::Type{T}=Float64)
+    q = QuadType(n, Jacobi.GLJ, T)
+    SpecElem1d{T}(q.Q, q.z, q.w, q.D, Lagrange1d(q.z))
+end
+
+qnodes(b::SpecElem1d) = b.ξ
+nmodes(b::SpecElem1d) = b.Q
+nquad(b::SpecElem1d) = b.Q
+qweights(b::SpecElem1d) = b.w
+basis(b::SpecElem1d) = b.bas
+qbasis{T<:Number}(b::SpecElem1d{T}) = eye(T,nmodes(b))
+dqbasis(b::SpecElem1d) = b.D
+
 
 
 

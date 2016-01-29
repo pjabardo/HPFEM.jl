@@ -110,7 +110,7 @@ end
 """
 Build a Lagrange polynomial basis at any set of distinct nodes.
 """
-function Lagrange1d{T<:Number}(x::AbstractVector{T}, ::Type{T}=Float64)
+function Lagrange1d{T<:Number}(x::AbstractVector{T})
     n = length(x)
     z = zeros(T, n)
 
