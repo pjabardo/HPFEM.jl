@@ -1,11 +1,21 @@
 
+"""
+Quadrature information
 
+Most spectral-element operations require calculation of integrals and derivatives.
+The `QuadType` structure stores the required information when calculating integrals
+and derivatives
+"""
 type QuadType{T<:Number}
     Q::Int
     z::Vector{T}
     w::Vector{T}
     D::Matrix{T}
 end
+
+"""
+Constructs quadrature rules for Gauss-type quadrature.
+"""
 function QuadType{T<:Number,QT<:QUADRATURE_TYPE}(q::Int, ::Type{QT}=GLJ, ::Type{T}=Float64, a=0, b=0)
     z = qzeros(QT, q, a, b, T)
     w = qweights(QT, z, a, b)
@@ -13,6 +23,15 @@ function QuadType{T<:Number,QT<:QUADRATURE_TYPE}(q::Int, ::Type{QT}=GLJ, ::Type{
     QuadType(q, z, w, D)
 end
 
+"""
+Creates the ith Lagrange polynomial from a vector of nodes
+
+Explicit construction of Lagrange polynomials from the nodes.
+This function builds a `Poly` object.
+
+ * `i` Index specifying which Lagrange polynomial should be returned.
+ * `z` Vector containing the nodes of the Lagrange polynomials.
+"""
 function lagrange_poly{T<:Number}(i::Integer, z::AbstractVector{T})
     np = length(z)
 
