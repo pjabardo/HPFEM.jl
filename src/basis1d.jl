@@ -1,8 +1,6 @@
 
 
 
-
-
 " Generic basis "
 abstract GenBasis
 

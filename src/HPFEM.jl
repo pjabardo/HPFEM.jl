@@ -19,4 +19,11 @@ include("dirichilet_lift.jl")
 include("bbmatrix.jl")
 include("static_cond_solver.jl")
 include("plotmatrix.jl")
+
+export isbndryint, ModalC01d, Legendre1d, Lagrange1d
+export QuadType
+export nbndry, ninterior, bndry_idx, interior_idx
+export seq2bi!, seq2bi, bi2seq!, bi2seq, seq2b!, seq2b, seq2i!, seq2i
+export Basis1d, qnodes, nmodes, nquad, qweights, basis, qbasis, dqbasis, basis1d, basis1d!
+
 end # module
