@@ -1,19 +1,13 @@
-import Base.length
-import Base.call
 
 
 
 
 
-
-
-
-import Base.convert
-convert(::Type{LocalNumSys}, b::BasisFun) = b.lnum
-
-
+" Generic basis "
 abstract GenBasis
-abstract GenBasis1d
+
+" Generic 1d basis "
+abstract GenBasis1d <: GenBasis
 
 type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d
     M::Int
@@ -28,6 +22,28 @@ type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d
     quad::QuadType
 end
 
+function std_mass_matrix1d{T<:Number}(ϕ::AbstractArray{T,2}, w::AbstractVector{T})
+    m = ncol(ϕ)
+    mass = zeros(T,m,m)
+    for k = 1:m
+        for i = k:m
+            mm = 0.0
+            for j = 1:Q
+                mm += ϕ[j,i] * ϕ[j,k] * w[j]
+            end
+            mass[i,k] = mm
+            mass[k,i] = mm
+        end
+    end
+    
+
+    return mass
+end
+
+
+
+    
+    
 function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     # Create the basis function
     m = nmodes(b)
@@ -49,17 +65,7 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     dϕ = D * ϕ
     
     # calcular a matrix de massa
-    mass = zeros(m,m)
-    for k = 1:m
-        for i = k:m
-            mm = 0.0
-            for j = 1:Q
-                mm += ϕ[j,i] * ϕ[j,k] * w[j]
-            end
-            mass[i,k] = mm
-            mass[k,i] = mm
-        end
-    end
+    mass = std_mass_matrix1d(ϕ, w)
     
     imass = cholfact(mass)
     Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, imass, b, q)

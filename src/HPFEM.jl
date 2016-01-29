@@ -3,6 +3,10 @@ module HPFEM
 using Jacobi
 using Base.LinAlg
 
+import Base.length
+import Base.call
+import Base.size
+
 # package code goes here
 include("localnum.jl")
 include("basis_fun1d.jl")
