@@ -18,4 +18,5 @@ include("dofmap.jl")
 include("dirichilet_lift.jl")
 include("bbmatrix.jl")
 include("static_cond_solver.jl")
+include("plotmatrix.jl")
 end # module
