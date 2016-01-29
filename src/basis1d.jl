@@ -248,13 +248,6 @@ basis(b::SpecElem1d) = b.bas
 qbasis{T<:Number}(b::SpecElem1d{T}) = eye(T,nmodes(b))
 dqbasis(b::SpecElem1d) = b.D
 
-
-
-
-
-
-
-
-
-
-
+project!(b::SpecElem1d, f::AbstractVector, u::AbstractVector) = copy!(u, f)
+project(b::SpecElem1d, f::AbstractVector) = project!(b, f, similar(f))
+project(b::SpecElem1d, f::Function) = project(b, f(qnodes(b)))
