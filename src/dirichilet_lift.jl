@@ -16,21 +16,21 @@ boundary modes!
 Now we still have the issue of non-homogeneous BCs. That is easy as well,
 just split the solution into two parts: homogeneous and dirichilet:
 
-$
+
 u(x) = u^h(x) + u^d(x)
-$
+
 
 The weak form will take the following form:
 
-$
+
 a(u, v) = a(u^h + u^d, v) = a(u^h, v) + a(u^d, v) = f(x)
-$
 
-Since $u^d$ is known (Dirichiulet BCs),
 
-$
+Since u^d is known (Dirichiulet BCs),
+
+
 a(u^h, v) = f(x) - a(u^d, v)
-$
+
 
 The `DirichiletLift` type and associated methods implement the correction of
 the right hand side of the equation at a local element.
