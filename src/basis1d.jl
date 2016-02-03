@@ -174,7 +174,7 @@ function project!(b::Basis1d, f::AbstractVector, u::AbstractVector)
   iM = b.imass
 
   for k = 1:M
-    F = zero(f)
+    F = zero(eltype(f))
     for q = 1:Q
       F += f[q] * ϕ[q,k] * w[q]
     end
