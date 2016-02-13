@@ -1,4 +1,17 @@
+abstract GenFunction
+abstract GenFunction1d
 
-type Function1d{T <: Number}
+immutable ConstFun1d{T<:Number} <:GenFunction1d
     val::T
-    
+end
+
+call(f::ConstFun1d, x) = f.val
+
+
+immutable Fun1d{Callable, T<:Number} <: GenFunction1d
+    fun::Callable
+end
+
+call(f::Fun1d, x) = f(x)
+
+

@@ -1,28 +1,52 @@
 
+abstract Element
 
 
-type Element1d{Bas <: Basis1d}
+type Element1d{T <: Number} <: Element
     id::Int
-    basis::Bas
-    a::Float64
-    b::Float64
-    J::Float64
-    Element1d(bas::Basis1d, a=-1.0, b=1.0) = new(bas, a, b, 2/(b-a))
+    a::T
+    b::T
+    x::Vector{T}
+    J::Vector{T}
+    wJ::Vector{T}
+    dξdx::Vector{T}
 end
 
-nmodes(el::Element1d) = el.basis.M
-nquad(el::Element1d) = el.basis.Q
-basis1d(el::Element1d) = el.basis
-basis(el::Element1d) = basis(basis1d(el))
-dbasis(el::Element1d) = dbasis(basis1d(el))
-weights(el::Element1d) = weights(basis1d(el))
-jacobian(el::Element1d) = el.J
 
-function qnodes(el::Element1d)
-  ξ = qnodes(basis1d(el))
-  (1 - ξ)*el.a/2 + (1 + ξ)*el.b/2
+function Element1d{T<:Number}(id, a::T, b::T, bas::GenBasis1d)
+    w = qweights(bas)
+    ξ = qnodes(bas)
+    Q = nquad(bas)
+    x = zeros(T, Q)
+    dξdx = zeros(T,Q)
+    J = zeros(T,Q)
+    wJ = zeros(T,Q)
+    
+    if !isinf(a) && !isinf(b)
+        d = (b-a) / 2
+        
+        for i = 1:Q
+            J[i] = d
+            x[i] = (1-ξ[i])*a/2 + (1 + ξ[i])*b/2
+            dξdx[i] = 1/d
+            wJ[i] = w[i] * d
+        end
+    end
+
+    Element1d(id, a, b, x, J, wJ, dξdx)
 end
 
+
+eid(e::Element) = e.id
+jweights(e::Element) = e.wJ
+deriv_ξ(e::Element1d) = e.dξdx
+
+
+function mass_matrix!(el::Elemen1d, bas::GenBasis1d, λ::GenFunction1d, A::AbstractMatrix)
+    
+    
+
+end
 
 function add_mass_matrix!{T}(el::Element1d, mass::AbstractMatrix{T}, λ=one(T))
     J = jacobian(el)
