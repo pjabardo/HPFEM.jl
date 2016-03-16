@@ -38,61 +38,11 @@ end
 
 
 eid(e::Element) = e.id
-jweights(e::Element) = e.wJ
+jacweights(e::Element) = e.wJ
 deriv_ξ(e::Element1d) = e.dξdx
+jacobian(el) = el.J
 
 
-function mass_matrix!(el::Elemen1d, bas::GenBasis1d, λ::GenFunction1d, A::AbstractMatrix)
-    
-    
-
-end
-
-function add_mass_matrix!{T}(el::Element1d, mass::AbstractMatrix{T}, λ=one(T))
-    J = jacobian(el)
-    M = nmodes(el)
-    Q = nquad(el)
-    ϕ = basis1d(el)
-    w = weights(el)
-    for k = 1:M
-        for i = k:M
-            m = 0.0
-            for q = 1:Q
-                m += ϕ[q,k] * ϕ[q, i] * w[q]
-            end
-            mass[k,i] += m*J*λ
-            if k != i
-                mass[i,k] += m*J*λ
-            end
-        end
-    end
-    return mass
-end
-
-
-function add_mass_matrix!{T}(el::Element1d, mass::AbstractMatrix{T}, λ::AbstractVector{T})
-    J = jacobian(el)
-    M = nmodes(el)
-    Q = nquad(el)
-    ϕ = basis1d(el)
-    w = weights(el)
-    for k = 1:M
-        for i = k:M
-            m = 0.0
-            for q = 1:Q
-                m += ϕ[q,k] * ϕ[q, i] * w[q] * λ[q]
-            end
-            mass[k,i] += m*J*λ
-            if k != i
-                mass[i,k] += m*J*λ
-            end
-        end
-    end
-    return mass
-end
-
-function add_stiff_matrix!(el::Element1d, mass::AbstractMatrix)
-end
 
 mass_matrix(el::Element1d) = jacobian(el) * mass_matrix(basis1d(el))
 stiff_matrix(el::Element1d) = jacobian(el)^3 * stiff_matrix(basis1d(el))

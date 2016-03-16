@@ -3,7 +3,7 @@ abstract DofMap
 
 type DofMap1d <: DofMap
   nb::Int
-  nblsv::Int
+  nbslv::Int
   nbdir::Int
   nel::Int
   nbe::Int
@@ -26,6 +26,16 @@ type DofMap1d <: DofMap
     new(nb, nbslv, nbdir, nel, nbe, nie, nloc, bmap, mp)
   end
 end
+nbmodes(dof::DofMap) = dof.nb
+nbslvmodes(dof::DofMap) = dof.nbslv
+num_elems(dof::DofMap) = dof.nel
+
+ninodes(dof::DofMap1d) = dof.nel * dof.nie
+nbemodes(dof::DofMap1d, e=1) = dof.nbe
+niemodes(dof::DofMap1d, e=1) = dof.nie
+nlocmodes(dof::DofMap1d, e=1) = dof.nloc
+
+
 
 
 export DofMap1d
@@ -68,13 +78,13 @@ function DofMap1d(M, nnodes, idir, iper=false)
     end
   end
 
-  return DofMap(nel, nb, nd, nbe, nie, bmap)
+  return DofMap1d(nel, nb, nd, nbe, nie, bmap)
 end
 
 num_be(dof::DofMap, e) = dof.nbe
 num_ie(dof::DofMap, e) = dof.nbi
 
-bmap(e) = sub(dof.bmap, :, e)
+bmap(dof, e) = sub(dof.bmap, :, e)
 
 function global2local(dof::DofMap, xg::Array{Float64,1})
 
