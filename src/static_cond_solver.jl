@@ -19,43 +19,46 @@ using Base.LinAlg.BLAS.gemm!
 using Base.LinAlg.LAPACK.potrf!
 using Base.LinAlg.LAPACK.potrs!
 
-function add_local_matrix{Mat<:BBSolver, T <: Number}(solver::CholeskySC{Mat,T},
-                                                      e::Integer, Ae::Array{T,2},
-                                                      mape, mapi)
-    dof = solver.dof
-    Aii = solver.Aii[e]
-    ni = length(mape)
-    nb = length(mapi)
+function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, e::Integer,
+                                                    Abb::AbstractMatrix{T},
+                                                    Abi::AbstractMatrix{T},
+                                                    Aii::AbstractMatrix{T})
+    nb = size(Abb,1)
+    ni = size(Aii,1)
+
+    iAii = solver.Aii[e]
     for i = 1:ni
-        for k = i:ni
-            Aii[k, i] = Ae[mapi[k], mapi[i]]
+        for k = 1:ni
+            iAii[k,i] = Aii[k,i]
         end
     end
-    potrf!('L', Aii )
-
+    potrf!('L', iAii)
 
     M = solver.M[e]
     for k = 1:nb
         for i = 1:ni
-            M[i,k] = Ae[mapi[i], mape[k]] #Ae[i+nb, k]
+            M[i,k] = Abi[k,i]
         end
     end
 
-    potrs!('L', Aii, M)
-    Abb = zeros(T, nb, nb)
+    potrs!('L', iAii, M)
 
-    Aib = zeros(T, ni, nb)  #(Ae, (nb+1):(nb+ni), 1:nb)
-    for k = 1:nb
-        for i = 1:ni
-            Aib[i,k] = Ae[mapi[i], mape[k]]
-        end
-    end
-            
+    gemm!('T', 'T', -1.0, M, Abi, 1.0, Abb)
+    
+    assemble(solver, Abb, e, bmap(e))
+end
 
-    gemm!('T', 'N', -1.0, M, Aib, 1.0, Abb)
 
-    # Now we should assemble the global boundary-boundary matrix.
-    assemble(solver, Abb, e, 1:nb)
+    
+    
+function add_local_matrix{Mat<:BBSolver, T <: Number}(solver::CholeskySC{Mat,T},
+                                                      e::Integer, Ae::Array{T,2},
+                                                      ib, ii)
+    Abb = Ae[ib,ib]
+    Aii = Ae[ii,ii]
+    Abi = Ae[ib,ii]
+
+    add_local_matrix(solver, e, Abb, Abi, Aii)
 end
 
 

@@ -74,6 +74,8 @@ end
 num_be(dof::DofMap, e) = dof.nbe
 num_ie(dof::DofMap, e) = dof.nbi
 
+bmap(e) = sub(dof.bmap, :, e)
+
 function global2local(dof::DofMap, xg::Array{Float64,1})
 
   xloc = zeros(dof.nloc, dof.nel)
@@ -82,4 +84,5 @@ function global2local(dof::DofMap, xg::Array{Float64,1})
   end
   return xloc
 end
+
 
