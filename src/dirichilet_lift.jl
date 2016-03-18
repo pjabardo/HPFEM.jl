@@ -53,22 +53,58 @@ type DirichiletLift{T <: Number}
     "Order of local matrix"
     M::Int
 
+    "Number of dof of non-Dirichilet modes"
+    nh::Int
+
+    "Number of dof of Dirichilet modes"
+    nd::Int
+    
     "Full operator matrix (copy)"
     A::Array{T,2}
 
-    "Index of unknown variables"
-    isx::Array{Int,1}
+    "Index of non-Dirichilet modes"
+    ih::Vector{Int}
+
+    "Index of Dirichilet modes"
+    id::Vector{Int}
+    
 
     """
+    Create a new DirichiletLift object.
+
+     * `A0` Full elemental matrix
+     * `idir` Index of Dirichilet modes
     """
     function DirichiletLift(A0::AbstractArray{T,2}, idir)
         M = size(A0,1)
-        isx = trues(M)
-        for i in idir
-            isx[i] = false
+        nd = length(idir)
+        nh = M - nd
+
+        A = zeros(T, nh, nd)
+
+        ih = zeros(Int, nh)
+        id = zeros(Int, nd)
+        isx = falses(M)
+        
+        for i in 1:nd
+            isx[i] = true
+            id[i] = idir[i]
         end
-        A = copy(A0)
-        new(M, A, isx)
+
+        count = 1
+        for i = 1:M
+            if !isx[i]
+                ih[count] = i
+                count = count + 1
+            end
+        end
+        for j = 1:nd
+            for k = 1:nh
+                A[k,i] = A[ih[k], id[k]]
+            end
+        end
+
+        new(M, nh, nd, A, ih, id)
     end
 end
 
@@ -78,21 +114,20 @@ using Base.LinAlg.BLAS
 Actually lifts the solution
 
  * `lft` A `DirichiletLift` object that was previously created.
- * `b` A vector withThe right hand side corresponding to the element
- * `xd` 
+ * `f` A vector of the RHS. Dirichilet BCs are stored in it
 
 """
-function lift!{T<: Number}(lft::DirichiletLift, b::AbstractVector{T},
-                           xd::AbstractVector{T})
-
-  isx = lft.isx
-
-  for i = 1:lft.M
-    if isx[i]
-      xd[i] = zero(T)
+function lift!{T<: Number}(lft::DirichiletLift, f::AbstractVector{T})
+    nd = lft.nd
+    nh = lft.nh
+    id = lft.id
+    ih = lft.ih
+    A = lft.A
+    for i = 1:nd
+        for k = 1:nh
+            f[k] -= A[k,i]
+        end
     end
-  end
-  gemv!('N', -1.0, lft.A, xd, 1.0, b)
 end
 
 

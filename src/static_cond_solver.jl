@@ -12,6 +12,8 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     Abb::Mat
     Aii::Vector{Matrix{T}}
     M::Vector{Matrix{T}}
+    ub::Vector{T}
+    lft::Dict{Int,DirichiletLift}
 end
 
 bbmatrix(solver::CholeskySC) = solver.Abb
@@ -27,14 +29,17 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     Aii = Vector{Array{T,2}}(nel)
     M = Vector{Array{T,2}}(nel)
 
+    lmap = locmap(dof)
+
     for i = 1:nel
-        nbe = nbemodes(dof, i)
-        nie = niemodes(dof, i)
+        nbe = nbndry(lmap)
+        nie = niinterior(lmap)
         Aii[i] = zeros(T, nie, nie)
         M[i] = zeros(T, nie, nbe)
     end
-
-    CholeskySC(dof, Abb, Aii, M)
+    ub = zeros(T, nbslv)
+    lft = Dict{Int,DirichiletLift}()
+    CholeskySC(dof, Abb, Aii, M, ub, lft)
     
 end
 
@@ -43,30 +48,38 @@ using Base.LinAlg.LAPACK.potrf!
 using Base.LinAlg.LAPACK.potrs!
 
 function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, e::Integer,
-                                                    Abb::AbstractMatrix{T},
-                                                    Abi::AbstractMatrix{T},
-                                                    Aii::AbstractMatrix{T})
-    nb = size(Abb,1)
-    ni = size(Aii,1)
+                                                    Ae::AbstractMatrix{T}, ib, ii)
+    lmap = locmap(solver.dof)
+    nb = nbndry(lmap)
+    ni = ninterior(lmap)
 
-    iAii = solver.Aii[e]
+    if hasdirbc(solver.dof, e)
+        lft[e] = DirichiletLift(Ae, idirbc[e])
+    end
+
+    Aii = solver.Aii[e]
     for i = 1:ni
         for k = 1:ni
-            iAii[k,i] = Aii[k,i]
+            Aii[k,i] = Ae[ ii[k], ii[i] ]
         end
     end
-    potrf!('L', iAii)
+    potrf!('L', Aii)
 
     M = solver.M[e]
     for k = 1:nb
         for i = 1:ni
-            M[i,k] = Abi[k,i]
+            M[i,k] = Abi[ib[k],ii[i]]
         end
     end
 
-    potrs!('L', iAii, M)
+    potrs!('L', Aii, M)
+    ib = bndry_idx(lmap)
+    ii = interior_idx(lmap)
 
-    gemm!('T', 'T', -1.0, M, Abi, 1.0, Abb)
+    Abb = Ae[ib,ib]
+    Abi = Ae[ib,ii]
+    gemm!('N', 'N', -1.0, Abi, M, 1.0, Abb)
+
     
     assemble!(bbmatrix(solver), Abb, bmap(dofmap(solver), e))
 end
@@ -84,6 +97,17 @@ function teste_add_local_matrix{Mat<:BBSolver, T <: Number}(solver::CholeskySC{M
 
     add_local_matrix(solver, e, Abb, Abi, Aii)
 end
+
+
+function add_local_rhs{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, e::Integer,
+                                                 Fb::AbstractVector{T}, Fi::AbstractVector{T})
+    if hasdirbc(solver.dof, e)
+        lift!(solver.lft[e], Fb)
+    end
+    
+
+end
+
 
 
 type LU_SC{Mat<:BBSolver, T <: Number} <: StaticCond
