@@ -87,7 +87,7 @@ type DirichiletLift{T <: Number}
         isx = falses(M)
         
         for i in 1:nd
-            isx[i] = true
+            isx[idir[i]] = true
             id[i] = idir[i]
         end
 
@@ -100,7 +100,7 @@ type DirichiletLift{T <: Number}
         end
         for j = 1:nd
             for k = 1:nh
-                A[k,i] = A[ih[k], id[k]]
+                A[k,i] = A0[ih[k], id[k]]
             end
         end
 
@@ -125,7 +125,7 @@ function lift!{T<: Number}(lft::DirichiletLift, f::AbstractVector{T})
     A = lft.A
     for i = 1:nd
         for k = 1:nh
-            f[k] -= A[k,i]
+            f[ih[k]] -= A[k,i] * f[id[i]]
         end
     end
 end
