@@ -59,7 +59,7 @@ type DirichiletLift{T <: Number}
     "Number of dof of Dirichilet modes"
     nd::Int
     
-    "Full operator matrix (copy)"
+    "Operator matrix (copy)"
     A::Array{T,2}
 
     "Index of non-Dirichilet modes"
@@ -69,46 +69,45 @@ type DirichiletLift{T <: Number}
     id::Vector{Int}
     
 
-    """
-    Create a new DirichiletLift object.
-
-     * `A0` Full elemental matrix
-     * `idir` Index of Dirichilet modes
-    """
-    function DirichiletLift(A0::AbstractArray{T,2}, idir)
-        M = size(A0,1)
-        nd = length(idir)
-        nh = M - nd
-
-        A = zeros(T, nh, nd)
-
-        ih = zeros(Int, nh)
-        id = zeros(Int, nd)
-        isx = falses(M)
-        
-        for i in 1:nd
-            isx[idir[i]] = true
-            id[i] = idir[i]
-        end
-
-        count = 1
-        for i = 1:M
-            if !isx[i]
-                ih[count] = i
-                count = count + 1
-            end
-        end
-        for j = 1:nd
-            for k = 1:nh
-                A[k,i] = A0[ih[k], id[k]]
-            end
-        end
-
-        new(M, nh, nd, A, ih, id)
-    end
 end
 
-using Base.LinAlg.BLAS
+
+
+"""
+    Create a new DirichiletLift object.
+    
+    * `A0` Full elemental matrix
+    * `idir` Index of Dirichilet modes
+    """
+function DirichiletLift{T<:Number}(A0::AbstractArray{T,2}, idir)
+    M = size(A0,1)
+    nd = length(idir)
+    nh = M - nd
+    A = zeros(T, nh, nd)
+    ih = zeros(Int, nh)
+    id = zeros(Int, nd)
+    isx = falses(M)
+
+    for i in 1:nd
+        isx[idir[i]] = true
+        id[i] = idir[i]
+    end
+    count = 1
+    for i = 1:M
+        if !isx[i]
+            ih[count] = i
+            count = count + 1
+        end
+    end
+    for j = 1:nd
+        for k = 1:nh
+            A[k,j] = A0[ih[k], id[j]]
+        end
+    end
+    
+    DirichiletLift(M, nh, nd, A, ih, id)
+end
+
 
 """
 Actually lifts the solution
