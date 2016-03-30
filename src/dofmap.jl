@@ -17,6 +17,7 @@ type DofMap1d <: DofMap
         nbdir = length(idir)
         
         nbslv = nb - nbdir
+        nloc = nmodes(lmap)
         mp = zeros(Int, nloc, nel)
         for e = 1:nel
             mp[1,e] = bmap[1,e]
@@ -75,7 +76,7 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
         
     end
     
-    idir = Dict{Int,Vector{Int}}
+    idir = Dict{Int,Vector{Int}}()
     nbslv = nb - nd
     ib = bndry_idx(lmap)
     for e = 1:nel
@@ -87,7 +88,7 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
             idir[e] = [ib[2]]
         end
     end
-    return DofMap1d(nel, nb, nd, nbe, nie, lmap, bmap, idir)
+    return DofMap1d(nel, nb, nd, lmap, bmap, idir)
 end
 
 num_be(dof::DofMap, e) = dof.nbe
