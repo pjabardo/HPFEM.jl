@@ -13,6 +13,7 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     Aii::Vector{Matrix{T}}
     M::Vector{Matrix{T}}
     ub::Vector{T}
+    Fi::Matrix{T}
     lft::Dict{Int,DirichiletLift}
 end
 
@@ -31,19 +32,21 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
 
     lmap = locmap(dof)
 
+    nbe = nbndry(lmap)
+    nie = niinterior(lmap)
+    Fi = zeros(T, nie, nel)
     for i = 1:nel
-        nbe = nbndry(lmap)
-        nie = niinterior(lmap)
         Aii[i] = zeros(T, nie, nie)
         M[i] = zeros(T, nie, nbe)
     end
     ub = zeros(T, nbslv)
     lft = Dict{Int,DirichiletLift}()
-    CholeskySC(dof, Abb, Aii, M, ub, lft)
+    CholeskySC(dof, Abb, Aii, M, ub, Fi, lft)
     
 end
 
 using Base.LinAlg.BLAS.gemm!
+using Base.LinAlg.BLAS.gemv!
 using Base.LinAlg.LAPACK.potrf!
 using Base.LinAlg.LAPACK.potrs!
 
@@ -71,37 +74,104 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     M = solver.M[e]
     for k = 1:nb
         for i = 1:ni
-            M[i,k] = Abi[ib[k],ii[i]]
+            M[i,k] = Ae[ii[i],ib[k]]
         end
     end
-
     potrs!('L', Aii, M)
     ib = bndry_idx(lmap)
     ii = interior_idx(lmap)
 
     Abb = Ae[ib,ib]
     Abi = Ae[ib,ii]
-    gemm!('N', 'N', -1.0, Abi, M, 1.0, Abb)
+    gemm!('N', 'N', -one(T), Abi, M, one(T), Abb)
 
     
     assemble!(bbmatrix(solver), Abb, bmap(dof, e))
 end
 
 
-    
-    
+function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, Fe::AbstractMatrix{T})
 
-function add_local_rhs{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, e::Integer,
-                                                 Fb::AbstractVector{T}, Fi::AbstractVector{T})
-    if hasdirbc(solver.dof, e)
-        lift!(solver.lft[e], Fb)
+    dof = dofmap(solver)
+    lmap = locmap(dof)
+    ib = bndry_idx(lmap)
+    ii = interior_idx(lmap)
+    nel = num_elems(dof)
+
+    nbe = nbndry(lmap)
+    nie = ninterior(lmap)
+    
+    Fb = solver.ub
+    nb = nbmodes(dof)
+    nbslv = nbslvmodes(dof)
+    for i = 1:nbslv
+        Fb[i] = zero(T)
     end
-    
 
+    Fbe = zeros(T, nbe)
+    for e = 1:nel
+
+        Fie = sub(solver.Fi, :, e)
+        
+        if hasdirbc(dof, e)
+            lift!(solver.lft[e], sub(Fe, :, e))
+        end
+
+        for i = 1:nbe
+            Fbe[i] = Fe[ib[i],e]
+        end
+        for i = 1:nie
+            Fie[i] = Fe[ii[i],e]
+        end
+        gemv!('T', -one(T), solver.M[e], Fie, one(T), Fbe)
+        
+        m = bmap(dof, e)
+
+        for i in 1:nbe
+            ig = m[i]
+            if ig <= nbslv
+                Fb[ig] += Feb[i]
+            end
+        end
+
+    end
+
+
+    # Solve linear system (boundary-boundary system
+    Abb = bbmatrix(solver)
+    trf!(Abb, Fb)
+
+    # Scatter the results and solve for each element:
+    for e = 1:nel
+        m = bmap(dof, e)
+        for i = 1:nbe
+            ig = m[i]
+            if ig <= nbslv
+                Fbe[i] = Fb[ig]
+            else
+                # Dirichilet BC
+                Fbe[i] = Fe[ib[i],e]
+            end
+        end
+        Fie = sub(solver.Fi, :, e)
+        potrs!('L', solver.Aii[e], Fie)
+        gemv!('N', -one(T), solver.M[e], Fbe, one(T), Fie)
+
+        for i = 1:nbe
+            Fe[ib[i], e] = Fbe[i]
+        end
+        for i = 1:nie
+            Fe[ii[i], e] = Fie[i]
+        end
+    end
+
+    return Fe
+    
 end
 
+               
 
-
+               
 type LU_SC{Mat<:BBSolver, T <: Number} <: StaticCond
     dof::DofMap
     Abb::Mat

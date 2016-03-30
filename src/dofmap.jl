@@ -92,7 +92,7 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
 end
 
 num_be(dof::DofMap, e) = dof.nbe
-num_ie(dof::DofMap, e) = dof.nbi
+num_ie(dof::DofMap, e) = dof.nie
 
 bmap(dof, e) = sub(dof.bmap, :, e)
 
