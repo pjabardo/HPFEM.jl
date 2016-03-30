@@ -61,12 +61,12 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
     elseif nd > 0 # There is a Dirichilet BC.
         if nd == 1
             if idir[1] == 1
-                ii = [nnodes;  1:(nnodes-1)]
+                ii = [nnodes;  1:(nnodes-1);]
             else
-                ii = [1:nnodes]
+                ii = [1:nnodes;]
             end
         else
-            ii = [nnodes; 1:(nnodes-1)]
+            ii = [nnodes; 1:(nnodes-1);]
         end
         
         for e = 1:nel
