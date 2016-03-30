@@ -48,13 +48,16 @@ using Base.LinAlg.LAPACK.potrf!
 using Base.LinAlg.LAPACK.potrs!
 
 function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, e::Integer,
-                                                    Ae::AbstractMatrix{T}, ib, ii)
-    lmap = locmap(solver.dof)
+                                                    Ae::AbstractMatrix{T})
+    dof = dofmap(solver)
+    lmap = locmap(dof)
     nb = nbndry(lmap)
     ni = ninterior(lmap)
-
-    if hasdirbc(solver.dof, e)
-        lft[e] = DirichiletLift(Ae, idirbc[e])
+    ib = bndry_idx(lmap)
+    ii = interior_idx(lmap)
+    
+    if hasdirbc(dof, e)
+        lft[e] = DirichiletLift(Ae, idirbc(dof, e))
     end
 
     Aii = solver.Aii[e]
@@ -81,23 +84,12 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     gemm!('N', 'N', -1.0, Abi, M, 1.0, Abb)
 
     
-    assemble!(bbmatrix(solver), Abb, bmap(dofmap(solver), e))
+    assemble!(bbmatrix(solver), Abb, bmap(dof, e))
 end
 
 
     
     
-function teste_add_local_matrix{Mat<:BBSolver, T <: Number}(solver::CholeskySC{Mat,T},
-                                                      e::Integer, Ae::Array{T,2},
-                                                      ib::AbstractVector{Int},
-                                                      ii::AbstractVector{Int})
-    Abb = Ae[ib,ib]
-    Aii = Ae[ii,ii]
-    Abi = Ae[ib,ii]
-
-    add_local_matrix(solver, e, Abb, Abi, Aii)
-end
-
 
 function add_local_rhs{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, e::Integer,
                                                  Fb::AbstractVector{T}, Fi::AbstractVector{T})

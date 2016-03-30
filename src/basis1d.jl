@@ -104,7 +104,7 @@ qbasis(b::Basis1d) = b.ϕ
 "Derivative of basis functions at quadrature nodes"
 dqbasis(b::Basis1d) = b.dϕ
 
-
+locmap(b::Basis1d) = b.bas.lnum
 
 
 basis1d(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
@@ -253,6 +253,7 @@ qweights(b::SpecElem1d) = b.w
 basis(b::SpecElem1d) = b.bas
 qbasis{T<:Number}(b::SpecElem1d{T}) = eye(T,nmodes(b))
 dqbasis(b::SpecElem1d) = b.D
+locmap(b::SpecElem1d) = b.bas.lnum
 
 project!(b::SpecElem1d, f::AbstractVector, u::AbstractVector) = copy!(u, f)
 project(b::SpecElem1d, f::AbstractVector) = project!(b, f, similar(f))
