@@ -101,6 +101,9 @@ basis(b::Basis1d) = b.bas
 "Basis functions at quadrature nodes"
 qbasis(b::Basis1d) = b.ϕ
 
+"Derivative matrix at quadrature nodes"
+diffmat(b::Basis1d) = b.D
+
 "Derivative of basis functions at quadrature nodes"
 dqbasis(b::Basis1d) = b.dϕ
 
@@ -197,27 +200,6 @@ project(b::Basis1d, f::Function) = project(b, f(qnodes(b)))
 
 
 
-
-function stiff_matrix(b::Basis1d, mat)
-  M = nmodes(b)
-  Q = nquad(b)
-  dϕ = dqbasis(b)
-  w = qweights(w)
-
-  mat = zeros(M,M)
-
-  for k = 1:M
-    for i = k:M
-      m = 0.0
-      for q = 1:Q
-        m += dϕ[q,k] * dϕ[q, i] * w[q]
-      end
-      mat[k,i] = m
-      mat[i,k] = m
-    end
-  end
-  return mat
-end
 
 
 
