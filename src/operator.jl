@@ -102,4 +102,25 @@ function add_stiff_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mat::Abstr
 end
 
 
-   
+
+
+# RHS
+
+function add_rhs!{T<:Number}(bas::Basis1d{T}, el::Element1d, f::AbstractVector{T},
+                            Fe::AbstractVector{T})
+
+    wJ = jacweights(el)
+    ϕ = qbasis(bas)
+    M = nmodes(bas)
+    Q = nquad(bas)
+
+    for k = 1:M
+        F = zero(T)
+        for q = 1:Q
+            F += f[q] * ϕ[q,k] * wJ[q]
+        end
+        Fe[k] += F
+    end
+    return Fe 
+end
+

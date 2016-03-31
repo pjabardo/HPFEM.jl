@@ -15,10 +15,18 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     ub::Vector{T}
     Fi::Matrix{T}
     lft::Dict{Int,DirichiletLift}
+    decomp::Bool
 end
 
 bbmatrix(solver::CholeskySC) = solver.Abb
 dofmap(solver::CholeskySC) = solver.dof
+
+function trf!(solver::CholeskySC)
+    trf!(solver.Abb)
+    solver.decomp = true
+end
+
+
 
 function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Mat}, 
                                                              ::Type{T}=Float64)
@@ -33,7 +41,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     lmap = locmap(dof)
 
     nbe = nbndry(lmap)
-    nie = niinterior(lmap)
+    nie = ninterior(lmap)
     Fi = zeros(T, nie, nel)
     for i = 1:nel
         Aii[i] = zeros(T, nie, nie)
@@ -41,7 +49,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     end
     ub = zeros(T, nbslv)
     lft = Dict{Int,DirichiletLift}()
-    CholeskySC(dof, Abb, Aii, M, ub, Fi, lft)
+    CholeskySC(dof, Abb, Aii, M, ub, Fi, lft, false)
     
 end
 
@@ -58,7 +66,7 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     ni = ninterior(lmap)
     ib = bndry_idx(lmap)
     ii = interior_idx(lmap)
-    
+    lft = solver.lft
     if hasdirbc(dof, e)
         lft[e] = DirichiletLift(Ae, idirbc(dof, e))
     end
@@ -90,8 +98,11 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
 end
 
 
-function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, Fe::AbstractMatrix{T})
-
+function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::AbstractMatrix{T})
+    if (!solver.decomp)
+        trf!(solver)
+    end
+    
     dof = dofmap(solver)
     lmap = locmap(dof)
     ib = bndry_idx(lmap)
@@ -130,7 +141,7 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, Fe::Abstrac
         for i in 1:nbe
             ig = m[i]
             if ig <= nbslv
-                Fb[ig] += Feb[i]
+                Fb[ig] += Fbe[i]
             end
         end
 
@@ -139,7 +150,7 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{Mat,T}, Fe::Abstrac
 
     # Solve linear system (boundary-boundary system
     Abb = bbmatrix(solver)
-    trf!(Abb, Fb)
+    trs!(Abb, Fb)
 
     # Scatter the results and solve for each element:
     for e = 1:nel
