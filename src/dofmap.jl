@@ -22,7 +22,7 @@ type DofMap1d <: DofMap
         for e = 1:nel
             mp[1,e] = bmap[1,e]
             mp[2,e] = bmap[2,e]
-            for i = 1:nbndry(lmap)
+            for i = 1:ninterior(lmap)
                 mp[2+i,e] = nb + (e-1)*ninterior(lmap) + i
             end
         end
@@ -75,7 +75,6 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
         end
         
     end
-    
     idir = Dict{Int,Vector{Int}}()
     nbslv = nb - nd
     ib = bndry_idx(lmap)
