@@ -80,11 +80,11 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
     ib = bndry_idx(lmap)
     for e = 1:nel
         if bmap[1,e] > nbslv && bmap[2,e] > nbslv
-            idir[e] = [ib[1],ib[2]]
+            idir[e] = [1,2] 
         elseif bmap[1,e] > nbslv
-            idir[e] =  [ib[1]]
+            idir[e] =  [1] 
         elseif bmap[2,e] > nbslv
-            idir[e] = [ib[2]]
+            idir[e] = [2] 
         end
     end
     return DofMap1d(nel, nb, nd, lmap, bmap, idir)

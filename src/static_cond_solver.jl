@@ -66,10 +66,6 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     ni = ninterior(lmap)
     ib = bndry_idx(lmap)
     ii = interior_idx(lmap)
-    lft = solver.lft
-    if hasdirbc(dof, e)
-        lft[e] = DirichiletLift(Ae, idirbc(dof, e))
-    end
 
     Aii = solver.Aii[e]
     for i = 1:ni
@@ -93,6 +89,9 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     Abi = Ae[ib,ii]
     gemm!('N', 'N', -one(T), Abi, M, one(T), Abb)
 
+    if hasdirbc(dof, e)
+        solver.lft[e] = DirichiletLift(Abb, idirbc(dof, e))
+    end
     
     assemble!(bbmatrix(solver), Abb, bmap(dof, e))
 end
@@ -101,8 +100,8 @@ end
 function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::AbstractMatrix{T})
     if (!solver.decomp)
         trf!(solver)
+        solver.decomp = true
     end
-    
     dof = dofmap(solver)
     lmap = locmap(dof)
     ib = bndry_idx(lmap)
@@ -123,13 +122,12 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
     for e = 1:nel
 
         Fie = sub(solver.Fi, :, e)
-        
-        if hasdirbc(dof, e)
-            lift!(solver.lft[e], sub(Fe, :, e))
-        end
 
         for i = 1:nbe
             Fbe[i] = Fe[ib[i],e]
+        end
+        if hasdirbc(dof, e)
+            lift!(solver.lft[e], Fbe)
         end
         for i = 1:nie
             Fie[i] = Fe[ii[i],e]
