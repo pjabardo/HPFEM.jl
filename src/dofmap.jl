@@ -14,8 +14,6 @@ type DofMap1d <: DofMap
     idir::Dict{Int,Vector{Int}}
     function DofMap1d(nel, nb, nbdir, lmap::LocalNumSys1d,
                       bmap::Array{Int,2}, idir::Dict{Int,Vector{Int}})
-        nbdir = length(idir)
-        
         nbslv = nb - nbdir
         nloc = nmodes(lmap)
         mp = zeros(Int, nloc, nel)
@@ -77,6 +75,7 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
     end
     idir = Dict{Int,Vector{Int}}()
     nbslv = nb - nd
+
     ib = bndry_idx(lmap)
     for e = 1:nel
         if bmap[1,e] > nbslv && bmap[2,e] > nbslv

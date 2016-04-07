@@ -51,7 +51,7 @@ type BBSymTri{T<:Number} <: BBSym
     E::Array{T,1}
     function BBSymTri(nb, nbslv)
         D = zeros(T,nbslv)
-        E = zeros(T, nbslv-1)
+        E = zeros(T, max(nbslv-1,0))
         new(nb, nbslv, D, E)
     end
 end
@@ -112,8 +112,8 @@ type BBTri{T<:Number} <: BBSolver
     """
     function BBTri(nb, nbslv)
         D = zeros(T,nbslv)
-        Dl = zeros(T, nbslv-1)
-        Du = zeros(T, nbslv-1)
+        Dl = zeros(T, max(nbslv-1, 0))
+        Du = zeros(T, max(nbslv-1, 0))
         new(nb, nbslv, D, Dl, Du)
     end
 end
@@ -182,8 +182,8 @@ type BBTriP{T<:Number} <: BBSolver
     function BBTriP(nb, nbslv, periodic=false)
         if !periodic
             D = zeros(T,nbslv)
-            Dl = zeros(T, nbslv-1)
-            Du = zeros(T, nbslv-1)
+            Dl = zeros(T, max(nbslv-1, 0))
+            Du = zeros(T, max(nbslv-1, 0))
             new(nb, nbslv, periodic, Dl, D, Du)
         else
             nbslv = nb-1
@@ -302,7 +302,7 @@ type BBSymTriP{T<:Number} <: BBSym
     function BBSymTriP(nb, nbslv, periodic=false)
         if !periodic
             D = zeros(T,nbslv)
-            Du = zeros(T, nbslv-1)
+            Du = zeros(T, max(nbslv-1,0))
             new(nb, nbslv, periodic, D, Du)
         else
             nbslv = nb-1

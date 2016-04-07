@@ -22,7 +22,9 @@ bbmatrix(solver::CholeskySC) = solver.Abb
 dofmap(solver::CholeskySC) = solver.dof
 
 function trf!(solver::CholeskySC)
-    trf!(solver.Abb)
+    if nbslvmodes(solver.dof) > 0
+        solver.trf!(solver.Abb)
+    end
     solver.decomp = true
 end
 
@@ -148,8 +150,9 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
 
     # Solve linear system (boundary-boundary system
     Abb = bbmatrix(solver)
-    trs!(Abb, Fb)
-
+    if nbslv > 0
+        trs!(Abb, Fb)
+    end
     # Scatter the results and solve for each element:
     for e = 1:nel
         m = bmap(dof, e)
