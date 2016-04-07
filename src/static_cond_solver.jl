@@ -23,7 +23,7 @@ dofmap(solver::CholeskySC) = solver.dof
 
 function trf!(solver::CholeskySC)
     if nbslvmodes(solver.dof) > 0
-        solver.trf!(solver.Abb)
+        trf!(solver.Abb)
     end
     solver.decomp = true
 end
@@ -100,7 +100,7 @@ end
 
 
 function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::AbstractMatrix{T})
-    if (!solver.decomp)
+    if !solver.decomp
         trf!(solver)
         solver.decomp = true
     end
