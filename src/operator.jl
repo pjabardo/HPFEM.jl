@@ -99,7 +99,7 @@ function add_stiff_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mat::Abstr
     D = diffmat(bas)
     wJ = jacweights(el)
     dξdx = deriv_ξ(el)
-    println("DOIS")
+    
 
     for k = 1:M
         for i = k:M
