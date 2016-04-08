@@ -1,5 +1,5 @@
 
-function add_mass_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mass::AbstractMatrix{T}, λ=one(T))
+function add_mass_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mass::AbstractMatrix{T}, λ=one(T))
     M = nmodes(bas)
     Q = nquad(bas)
     ϕ = qbasis(bas)
@@ -19,15 +19,33 @@ function add_mass_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mass::Abstr
     return mass
 end
 
-mass_matrix{T<:Number}(bas::Basis1d{T}, el::Element1d{T}, λ=one(T)) =
+function add_mass_matrix!{T<:Number}(bas::SEM1d{T}, el::Element1d, mass::AbstractMatrix{T}, λ=one(T))
+
+    M = nmodes(bas)
+    wJ = jacweights(el)
+
+    for i = 1:M
+        mass[i,i] += wJ[i]*λ
+    end
+end
+
+
+mass_matrix{T<:Number}(bas::GenBasis1d, el::Element1d{T}, λ=one(T)) =
     add_mass_matrix!(bas, el, zeros(T, nmodes(bas), nmodes(bas)), λ)
 
    
-stiff_matrix{T<:Number}(bas::Basis1d{T}, el::Element1d{T}, λ=one(T)) =
-    add_stiff_matrix!(bas, el, zeros(T, nmodes(bas), nmodes(bas)), λ)
 
+function add_mass_matrix!{T<:Number}(bas::SEM1d{T}, el::Element1d, mass::AbstractMatrix{T}, λ::AbstractVector{T})
 
-function add_mass_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mass::AbstractMatrix{T}, λ::AbstractVector{T})
+    M = nmodes(bas)
+    wJ = jacweights(el)
+
+    for i = 1:M
+        mass[i,i] += wJ[i]*λ[i]
+    end
+end
+
+function add_mass_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mass::AbstractMatrix{T}, λ::AbstractVector{T})
     M = nmodes(bas)
     Q = nquad(bas)
     ϕ = qbasis(bas)
@@ -48,10 +66,9 @@ function add_mass_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mass::Abstr
 end
 
 
-function add_stiff_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mat::AbstractMatrix{T}, λ=one(T))
+function add_stiff_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mat::AbstractMatrix{T}, λ=one(T))
     M = nmodes(bas)
     Q = nquad(bas)
-    ϕ = qbasis(bas)
     dϕ = dqbasis(bas)
     D = diffmat(bas)
     wJ = jacweights(el)
@@ -71,14 +88,13 @@ function add_stiff_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mat::Abstr
     return mat
 end
 
-stiff_matrix{T<:Number}(bas::Basis1d{T}, el::Element1d{T}, λ=one(T)) =
+stiff_matrix{T<:Number}(bas::GenBasis1d, el::Element1d{T}, λ=one(T)) =
     add_stiff_matrix!(bas, el, zeros(T, nmodes(bas), nmodes(bas)), λ)
 
-function add_stiff_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mat::AbstractMatrix{T},
+function add_stiff_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mat::AbstractMatrix{T},
                                       λ::AbstractVector{T})
     M = nmodes(bas)
     Q = nquad(bas)
-    ϕ = qbasis(bas)
     dϕ = dqbasis(bas)
     D = diffmat(bas)
     wJ = jacweights(el)
@@ -101,12 +117,14 @@ function add_stiff_matrix!{T<:Number}(bas::Basis1d{T}, el::Element1d, mat::Abstr
     return mat
 end
 
+stiff_matrix{T<:Number}(bas::GenBasis1d, el::Element1d{T}, λ=AbstractVector{T}) =
+    add_stiff_matrix!(bas, el, zeros(T, nmodes(bas), nmodes(bas)), λ)
 
 
 
 # RHS
 
-function add_rhs!{T<:Number}(bas::Basis1d{T}, el::Element1d, f::AbstractVector{T},
+function add_rhs!{T<:Number}(bas::GenBasis1d, el::Element1d, f::AbstractVector{T},
                             Fe::AbstractVector{T})
 
     wJ = jacweights(el)
@@ -120,6 +138,19 @@ function add_rhs!{T<:Number}(bas::Basis1d{T}, el::Element1d, f::AbstractVector{T
             F += f[q] * ϕ[q,k] * wJ[q]
         end
         Fe[k] += F
+    end
+    return Fe 
+end
+
+
+function add_rhs!{T<:Number}(bas::SEM1d{T}, el::Element1d, f::AbstractVector{T},
+                            Fe::AbstractVector{T})
+
+    wJ = jacweights(el)
+    M = nmodes(bas)
+
+    for k = 1:M
+        Fe[k] = f[k] * wJ[k]
     end
     return Fe 
 end

@@ -204,7 +204,7 @@ project(b::Basis1d, f::Function) = project(b, f(qnodes(b)))
 
 
 
-type SpecElem1d{T<:Number} <: GenBasis1d
+type SEM1d{T<:Number} <: GenBasis1d
     "Number of quadrature nodes"
     Q::Int
 
@@ -223,24 +223,25 @@ type SpecElem1d{T<:Number} <: GenBasis1d
     
 end
 
-function SpecElem1d{T<:Number}(n::Integer, ::Type{T}=Float64)
+function SEM1d{T<:Number}(n::Integer, ::Type{T}=Float64)
     q = QuadType(n, Jacobi.GLJ, T)
-    SpecElem1d{T}(q.Q, q.z, q.w, q.D, Lagrange1d(q.z))
+    SEM1d{T}(q.Q, q.z, q.w, q.D, Lagrange1d(q.z))
 end
 
-qnodes(b::SpecElem1d) = b.ξ
-nmodes(b::SpecElem1d) = b.Q
-nquad(b::SpecElem1d) = b.Q
-qweights(b::SpecElem1d) = b.w
-basis(b::SpecElem1d) = b.bas
-qbasis{T<:Number}(b::SpecElem1d{T}) = eye(T,nmodes(b))
-dqbasis(b::SpecElem1d) = b.D
-locmap(b::SpecElem1d) = b.bas.lnum
+qnodes(b::SEM1d) = b.ξ
+nmodes(b::SEM1d) = b.Q
+nquad(b::SEM1d) = b.Q
+qweights(b::SEM1d) = b.w
+basis(b::SEM1d) = b.bas
+qbasis{T<:Number}(b::SEM1d{T}) = eye(T,nmodes(b))
+dqbasis(b::SEM1d) = b.D
+diffmat(b::SEM1d) = b.D
 
-project!(b::SpecElem1d, f::AbstractVector, u::AbstractVector) = copy!(u, f)
-project(b::SpecElem1d, f::AbstractVector) = project!(b, f, similar(f))
-project(b::SpecElem1d, f::Function) = project(b, f(qnodes(b)))
+locmap(b::SEM1d) = b.bas.lnum
+
+project!(b::SEM1d, f::AbstractVector, u::AbstractVector) = copy!(u, f)
+project(b::SEM1d, f::AbstractVector) = project!(b, f, similar(f))
+project(b::SEM1d, f::Function) = project(b, f(qnodes(b)))
 
 
-mass_matrix(b::SpecElem1d) = diagm(qweights(b))
 

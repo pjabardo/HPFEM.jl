@@ -6,6 +6,9 @@ type Element1d{T <: Number} <: Element
     id::Int
     a::T
     b::T
+    ξ::Vector{T}
+    w::Vector{T}
+    D::Matrix{T}
     x::Vector{T}
     J::Vector{T}
     wJ::Vector{T}
@@ -21,7 +24,7 @@ function Element1d{T<:Number}(id, a::T, b::T, bas::GenBasis1d)
     dξdx = zeros(T,Q)
     J = zeros(T,Q)
     wJ = zeros(T,Q)
-    
+    D = diffmat(bas)
     if !isinf(a) && !isinf(b)
         d = (b-a) / 2
         
@@ -33,7 +36,7 @@ function Element1d{T<:Number}(id, a::T, b::T, bas::GenBasis1d)
         end
     end
 
-    Element1d(id, a, b, x, J, wJ, dξdx)
+    Element1d(id, a, b, ξ, w, D, x, J, wJ, dξdx)
 end
 
 
@@ -41,11 +44,8 @@ eid(e::Element) = e.id
 jacweights(e::Element) = e.wJ
 deriv_ξ(e::Element1d) = e.dξdx
 jacobian(el) = el.J
+diffmat(e::Element1d) = e.D
 
-
-
-mass_matrix(el::Element1d) = jacobian(el) * mass_matrix(basis1d(el))
-stiff_matrix(el::Element1d) = jacobian(el)^3 * stiff_matrix(basis1d(el))
 
 
 
