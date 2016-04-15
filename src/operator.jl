@@ -117,10 +117,6 @@ function add_stiff_matrix!{T<:Number}(bas::GenBasis1d, el::Element1d, mat::Abstr
     return mat
 end
 
-stiff_matrix{T<:Number}(bas::GenBasis1d, el::Element1d{T}, λ=AbstractVector{T}) =
-    add_stiff_matrix!(bas, el, zeros(T, nmodes(bas), nmodes(bas)), λ)
-
-
 
 # RHS
 
