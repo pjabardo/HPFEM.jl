@@ -32,6 +32,8 @@ nbslvmodes(dof::DofMap) = dof.nbslv
 num_elems(dof::DofMap) = dof.nel
 ninodes(dof::DofMap1d) = dof.nel * dof.nie
 
+nslvmodes(dof::DofMap1d) = nbslvmodes(dof) + ninodes(dof)
+
 locmap(dof::DofMap1d, e=1) = dof.lmap
 
 hasdirbc(dof::DofMap1d, e) = haskey(dof.idir, e)
