@@ -28,9 +28,12 @@ type DofMap1d <: DofMap
     end
 end
 nbmodes(dof::DofMap) = dof.nb
+nbndry(dof::DofMap) = dof.nb
+
 nbslvmodes(dof::DofMap) = dof.nbslv
 num_elems(dof::DofMap) = dof.nel
 ninodes(dof::DofMap1d) = dof.nel * dof.nie
+ninterior(dof::DofMap1d) = dof.nel * dof.nie
 
 nslvmodes(dof::DofMap1d) = nbslvmodes(dof) + ninodes(dof)
 
