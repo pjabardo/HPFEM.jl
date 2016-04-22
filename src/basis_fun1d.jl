@@ -21,7 +21,7 @@ bndidx{T<:BasisFun}(b::T) = bndidx(b.lnum)
 nbndry{T<:BasisFun}(b::T) = nbndry(b.lnum)
 
 intidx{T<:BasisFun}(b::T) = intidx(b.lnum)
-nintrr{T<:BasisFun}(b::T) = nintrr(b.lnum)
+ninterior{T<:BasisFun}(b::T) = ninterior(b.lnum)
 
 seq2bi!{T}(b::BasisFun, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(b.lnum, x, y)
 seq2bi{T}(b::BasisFun, x::AbstractVector{T}) = seq2bi(b.lnum, x)

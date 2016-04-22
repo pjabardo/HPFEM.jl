@@ -43,7 +43,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     lmap = locmap(dof)
 
     nbe = nbndry(lmap)
-    nie = nintrr(lmap)
+    nie = ninterior(lmap)
     Fi = zeros(T, nie, nel)
     for i = 1:nel
         Aii[i] = zeros(T, nie, nie)
@@ -65,7 +65,7 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     dof = dofmap(solver)
     lmap = locmap(dof)
     nb = nbndry(lmap)
-    ni = nintrr(lmap)
+    ni = ninterior(lmap)
     ib = bndidx(lmap)
     ii = intidx(lmap)
 
@@ -109,7 +109,7 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
     nel = num_elems(dof)
 
     nbe = nbndry(lmap)
-    nie = nintrr(lmap)
+    nie = ninterior(lmap)
     
     Fb = solver.ub
     nb = nbmodes(dof)

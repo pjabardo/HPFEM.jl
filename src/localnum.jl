@@ -35,7 +35,7 @@ nmodes(n::LocalNumSys1d) = n.nb + n.ni
 nbndry(n::LocalNumSys1d) = n.nb
 
 "Number of interior modes"
-nintrr(n::LocalNumSys1d) = n.ni
+ninterior(n::LocalNumSys1d) = n.ni
 
 "Indices of boundary modes"
 bndidx(n::LocalNumSys1d) = n.bndry
@@ -111,7 +111,7 @@ function seq2i!{T}(lnum::LocalNumSys1d, x::AbstractVector{T}, y::AbstractVector{
 end
 
 "Extract interior modes from modes numbered sequentially"
-seq2i{T}(lnum::LocalNumSys1d, x::AbstractVector{T}) = seq2i!(lnum, x, zeros(T, nintrr(lnum)))
+seq2i{T}(lnum::LocalNumSys1d, x::AbstractVector{T}) = seq2i!(lnum, x, zeros(T, ninterior(lnum)))
 
 
 

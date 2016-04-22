@@ -121,7 +121,7 @@ Basis1d(m::Int, q::Int) = Basis1d(ModalC01d(m), QuadType(q))
 Basis1d(m::Int) = Basis1d(m, m+1)
 
 nbndry(b::GenBasis1d) = nbndry(basis(b))
-nintrr(b::GenBasis1d) = nintrr(basis(b))
+ninterior(b::GenBasis1d) = ninterior(basis(b))
 
 bndidx(b::GenBasis1d) = bndidx(basis(b))
 intidx(b::GenBasis1d) = intidx(basis(b))
