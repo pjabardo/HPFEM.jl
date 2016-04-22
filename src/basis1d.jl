@@ -121,10 +121,10 @@ Basis1d(m::Int, q::Int) = Basis1d(ModalC01d(m), QuadType(q))
 Basis1d(m::Int) = Basis1d(m, m+1)
 
 nbndry(b::GenBasis1d) = nbndry(basis(b))
-ninterior(b::GenBasis1d) = ninterior(basis(b))
+nintrr(b::GenBasis1d) = nintrr(basis(b))
 
-bndry_idx(b::GenBasis1d) = bndry_idx(basis(b))
-interior_idx(b::GenBasis1d) = interior_idx(basis(b))
+bndidx(b::GenBasis1d) = bndidx(basis(b))
+intidx(b::GenBasis1d) = intidx(basis(b))
 
 seq2bi!{T}(b::GenBasis1d, x::AbstractVector{T}, y::AbstractVector{T}) = seq2bi!(basis(b).lnum, x, y)
 seq2bi{T}(b::GenBasis1d, x::AbstractVector{T}) = seq2bi(basis(b).lnum, x)

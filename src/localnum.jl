@@ -22,7 +22,7 @@ immutable LocalNumSys1d <: LocalNumSys
     "Indicesof boundary modes"
     bndry::Vector{Int}
     "Indices of interior modes"
-    interior::Vector{Int}
+    intrr::Vector{Int}
 end
 LocalNumSys1d(b::Vector{Int}, i::Vector{Int}) = LocalNumSys1d(length(b), length(i), b, i)
 
@@ -35,13 +35,13 @@ nmodes(n::LocalNumSys1d) = n.nb + n.ni
 nbndry(n::LocalNumSys1d) = n.nb
 
 "Number of interior modes"
-ninterior(n::LocalNumSys1d) = n.ni
+nintrr(n::LocalNumSys1d) = n.ni
 
 "Indices of boundary modes"
-bndry_idx(n::LocalNumSys1d) = n.bndry
+bndidx(n::LocalNumSys1d) = n.bndry
 
 "Indices of interior modes"
-interior_idx(n::LocalNumSys1d) = n.interior
+intidx(n::LocalNumSys1d) = n.intrr
 
 "Convert vector from sequential numbering to boundary/interior"
 function seq2bi!{T}(lnum::LocalNumSys1d, x::AbstractVector{T}, y::AbstractVector{T})
@@ -50,7 +50,7 @@ function seq2bi!{T}(lnum::LocalNumSys1d, x::AbstractVector{T}, y::AbstractVector
         y[i] = x[lnum.bndry[i]]
     end
     for i = 1:lnum.ni
-        y[i+lnum.nb] = x[lnum.interior[i]]
+        y[i+lnum.nb] = x[lnum.intrr[i]]
     end
     y
 end
@@ -64,7 +64,7 @@ function bi2seq!{T}(lnum::LocalNumSys1d, x::AbstractVector{T}, y::AbstractVector
         y[lnum.bndry[i]] = x[i]
     end
     for i = 1:lnum.ni
-        y[lnum.interior[i]] = x[i+lnum.nb]
+        y[lnum.intrr[i]] = x[i+lnum.nb]
     end
     y
 end
@@ -80,7 +80,7 @@ function bi2seq!{T}(lnum::LocalNumSys1d, xb::AbstractVector{T}, xi::AbstractVect
         y[lnum.bndry[i]] = xb[i]
     end
     for i = 1:lnum.ni
-        y[lnum.interior[i]] = xi[i]
+        y[lnum.intrr[i]] = xi[i]
     end
     y
 end
@@ -105,13 +105,13 @@ seq2b{T}(lnum::LocalNumSys1d, x::AbstractVector{T}) = seq2b!(lnum, x, zeros(T, n
 "Extract interior modes from modes numbered sequentially"
 function seq2i!{T}(lnum::LocalNumSys1d, x::AbstractVector{T}, y::AbstractVector{T})
     for i = 1:lnum.ni
-        y[i] = x[lnum.interior[i]]
+        y[i] = x[lnum.intrr[i]]
     end
     y
 end
 
 "Extract interior modes from modes numbered sequentially"
-seq2i{T}(lnum::LocalNumSys1d, x::AbstractVector{T}) = seq2i!(lnum, x, zeros(T, ninterior(lnum)))
+seq2i{T}(lnum::LocalNumSys1d, x::AbstractVector{T}) = seq2i!(lnum, x, zeros(T, nintrr(lnum)))
 
 
 

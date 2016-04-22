@@ -20,8 +20,8 @@ type DofMap1d <: DofMap
         for e = 1:nel
             mp[1,e] = bmap[1,e]
             mp[2,e] = bmap[2,e]
-            for i = 1:ninterior(lmap)
-                mp[2+i,e] = nb + (e-1)*ninterior(lmap) + i
+            for i = 1:nintrr(lmap)
+                mp[2+i,e] = nb + (e-1)*nintrr(lmap) + i
             end
         end
         new(nb, nbslv, nbdir, nel, lmap, bmap, mp, idir)
@@ -43,7 +43,7 @@ export DofMap1d
 
 function DofMap1d(lmap, nnodes, idir, iper=false)
     nbe = nbndry(lmap)
-    nie = ninterior(lmap)
+    nie = nintrr(lmap)
     
     nel = nnodes - 1
     bmap = zeros(Int, nbe, nel)
@@ -78,7 +78,7 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
     idir = Dict{Int,Vector{Int}}()
     nbslv = nb - nd
 
-    ib = bndry_idx(lmap)
+    ib = bndidx(lmap)
     for e = 1:nel
         if bmap[1,e] > nbslv && bmap[2,e] > nbslv
             idir[e] = [1,2] 

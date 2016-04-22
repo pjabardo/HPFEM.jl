@@ -43,7 +43,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     lmap = locmap(dof)
 
     nbe = nbndry(lmap)
-    nie = ninterior(lmap)
+    nie = nintrr(lmap)
     Fi = zeros(T, nie, nel)
     for i = 1:nel
         Aii[i] = zeros(T, nie, nie)
@@ -65,9 +65,9 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
     dof = dofmap(solver)
     lmap = locmap(dof)
     nb = nbndry(lmap)
-    ni = ninterior(lmap)
-    ib = bndry_idx(lmap)
-    ii = interior_idx(lmap)
+    ni = nintrr(lmap)
+    ib = bndidx(lmap)
+    ii = intidx(lmap)
 
     Aii = solver.Aii[e]
     for i = 1:ni
@@ -84,8 +84,6 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
         end
     end
     potrs!('L', Aii, M)
-    ib = bndry_idx(lmap)
-    ii = interior_idx(lmap)
 
     Abb = Ae[ib,ib]
     Abi = Ae[ib,ii]
@@ -106,12 +104,12 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
     end
     dof = dofmap(solver)
     lmap = locmap(dof)
-    ib = bndry_idx(lmap)
-    ii = interior_idx(lmap)
+    ib = bndidx(lmap)
+    ii = intidx(lmap)
     nel = num_elems(dof)
 
     nbe = nbndry(lmap)
-    nie = ninterior(lmap)
+    nie = nintrr(lmap)
     
     Fb = solver.ub
     nb = nbmodes(dof)
