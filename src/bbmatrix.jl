@@ -101,11 +101,9 @@ type BBTri{T<:Number} <: BBSolver
     Dl::Array{T,1}
     "Upper sub-diagonal elements"
     Du::Array{T,1}
-    "Extra storage needed by Lapack"
-    Du2::Array{T,1}
-    "Pivoting array"
-    ipiv::Array{BlasInt,1}
-
+    "Tridiagonal object"
+    tri::Tridiagonal{T}
+    fact::Base.LinAlg.LU{T,Tridiagonal{T}}
     """
     Inner constructor. Du2 and ipiv are left undefined,
     first the matrix must be assembled.
@@ -114,7 +112,8 @@ type BBTri{T<:Number} <: BBSolver
         D = zeros(T,nbslv)
         Dl = zeros(T, max(nbslv-1, 0))
         Du = zeros(T, max(nbslv-1, 0))
-        new(nb, nbslv, D, Dl, Du)
+        tri = Tridiagonal(Dl, D, Du)
+        new(nb, nbslv, D, Dl, Du, tri)
     end
 end
 
@@ -147,14 +146,79 @@ function assemble!{T}(Ag::BBTri{T}, Ae, m)
 
 end
 
+function trf!(Ag::BBTri)
+    Ag.fact = lufact!(Ag.tri)
+    return
+end
+trs!(Ag::BBTri, x) = A_ldiv_B!(Ag.fact, x)
+
+
+"Global boundary-boundary tridiagonal matrices"
+type BBTri2{T<:Number} <: BBSolver
+    "Number of boundary modes"
+    nb::Int
+    "Number of boundary modes that should be solved"
+    nbslv::Int
+    "Diagonal elements of the matrix"
+    D::Array{T,1}
+    "Lower sub-diagonal elements"
+    Dl::Array{T,1}
+    "Upper sub-diagonal elements"
+    Du::Array{T,1}
+    "Extra storage needed by Lapack"
+    Du2::Array{T,1}
+    "Pivoting array"
+    ipiv::Array{BlasInt,1}
+
+    """
+    Inner constructor. Du2 and ipiv are left undefined,
+    first the matrix must be assembled.
+    """
+    function BBTri2(nb, nbslv)
+        D = zeros(T,nbslv)
+        Dl = zeros(T, max(nbslv-1, 0))
+        Du = zeros(T, max(nbslv-1, 0))
+        new(nb, nbslv, D, Dl, Du)
+    end
+end
+
+
+function assemble!{T}(Ag::BBTri2{T}, Ae, m)
+    np1 = Ag.nbslv + 1
+    D = Ag.D
+    Dl = Ag.Dl
+    Du = Ag.Du
+
+
+    ig = m[1]
+    kg = m[2]
+
+    if ig < np1
+        D[ig] += Ae[1,1]
+        if kg < np1
+            D[kg] += Ae[2,2]
+            if ig < kg
+                Du[ig] += Ae[1,2]
+                Dl[ig] += Ae[2,1]
+            elseif kg < ig
+                Du[kg] = Ae[2,1]
+                Dl[kg] = Ae[1,2]
+            end
+        end
+    elseif kg < np1
+        D[kg] += Ae[2,2]
+    end
+
+end
+
 using Base.LinAlg.LAPACK.gttrf!
 using Base.LinAlg.LAPACK.gttrs!
 
-function trf!(Ag::BBTri)
+function trf!(Ag::BBTri2)
     Dl, D, Du, Ag.Du2, Ag.ipiv = gttrf!(Ag.Dl, Ag.D, Ag.Du)
     return
 end
-trs!(Ag::BBTri, x) = gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, x)
+trs!(Ag::BBTri2, x) = gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, x)
 
 
 type BBTriP{T<:Number} <: BBSolver
