@@ -49,7 +49,66 @@ type BBSymTri{T<:Number} <: BBSym
     D::Array{T,1}
     "Sub-diagonal elements"
     E::Array{T,1}
+
+    "Tridiagonal Matrix"
+    tri::SymTridiagonal{T}
+    "Factorization of symmetric tridiagonal matrix"
+    fact:: LDLt{T,SymTridiagonal{T}}
+    
     function BBSymTri(nb, nbslv)
+        D = zeros(T,nbslv)
+        E = zeros(T, max(nbslv-1,0))
+        tri = SymTridiagonal(D, E)
+        new(nb, nbslv, D, E, tri)
+    end
+end
+
+
+"LU (or Choleksy) decomposition of boundary-boundary system"
+function trf!(Ag::BBSymTri)
+    Ag.fact = ldltfact!(Ag.tri)
+end
+
+"Solving linear system using LU (or Cholesky) decomposition"
+trs!(Ag::BBSymTri, x) = A_ldiv_B!(Ag.fact, x)
+
+"""
+Assembles the global boundary-boundary matrix.
+"""
+function assemble!{T}(Ag::BBSymTri{T}, Ae, m)
+    np1 = Ag.nbslv + 1
+    D = Ag.D
+    E = Ag.E
+
+    ig = m[1]
+    kg = m[2]
+
+    if ig < np1
+        D[ig] += Ae[1,1]
+        if kg < np1
+            D[kg] += Ae[2,2]
+            E[min(ig,kg)] += Ae[1,2]
+        end
+    elseif kg < np1
+        D[kg] += Ae[2,2]
+    end
+
+end
+
+
+
+
+"Global boundary-boundary symmetric tridiagonal matrices"
+type BBSymTri2{T<:Number} <: BBSym
+    "Number of boundary modes"
+    nb::Int
+    "Number of boundary modes that should be solved"
+    nbslv::Int
+    "Diagonal elements of the matrix"
+    D::Array{T,1}
+    "Sub-diagonal elements"
+    E::Array{T,1}
+    function BBSymTri2(nb, nbslv)
         D = zeros(T,nbslv)
         E = zeros(T, max(nbslv-1,0))
         new(nb, nbslv, D, E)
@@ -60,15 +119,15 @@ using Base.LinAlg.LAPACK.pttrf!
 using Base.LinAlg.LAPACK.pttrs!
 
 "LU (or Choleksy) decomposition of boundary-boundary system"
-trf!(Ag::BBSymTri) = pttrf!(Ag.D, Ag.E)
+trf!(Ag::BBSymTri2) = pttrf!(Ag.D, Ag.E)
 
 "Solving linear system using LU (or Cholesky) decomposition"
-trs!(Ag::BBSymTri, x) = pttrs!(Ag.D, Ag.E, x)
+trs!(Ag::BBSymTri2, x) = pttrs!(Ag.D, Ag.E, x)
 
 """
 Assembles the global boundary-boundary matrix.
 """
-function assemble!{T}(Ag::BBSymTri{T}, Ae, m)
+function assemble!{T}(Ag::BBSymTri2{T}, Ae, m)
     np1 = Ag.nbslv + 1
     D = Ag.D
     E = Ag.E
