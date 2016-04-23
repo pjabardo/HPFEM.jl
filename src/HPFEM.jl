@@ -9,6 +9,7 @@ import Base.call
 import Base.size
 
 # package code goes here
+include("mesh1d.jl")
 include("localnum.jl")
 include("basis_fun1d.jl")
 include("quadrature1d.jl")
