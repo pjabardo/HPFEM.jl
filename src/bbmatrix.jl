@@ -6,7 +6,8 @@ type BBMatrix{T<:Number} <: BBSolver
     nb::Int
     nbslv::Int
     A::Array{T,2}
-    ipiv::Array{BlasInt,1}
+    #ipiv::Array{BlasInt,1}
+    fact::Base.LinAlg.LU{T,Array{T,2}}
     BBMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
 end
 
@@ -27,17 +28,45 @@ function assemble!{T<:Number}(Ag::BBMatrix{T}, Ae, m)
     end
 end
 
-using Base.LinAlg.LAPACK.getrf!
-using Base.LinAlg.LAPACK.getrs!
 function trf!(Ag::BBMatrix)
-    A, ipiv, info = getrf!(Ag.A)
-    Ag.ipiv = ipiv
+    Ag.fact = lufact!(Ag.A)
 end
-trs!(Ag::BBMatrix, x) = getrs!('N', Ag.A, Ag.ipiv, x)
+trs!(Ag::BBMatrix, x) = A_ldiv_B!(Ag.fact, x) 
 
 
 "Global boundary-boundary Symmetric Positive-Definite matrix"
 abstract BBSym <: BBSolver
+
+
+type BBSymMatrix{T<:Number} <: BBSym
+    nb::Int
+    nbslv::Int
+    A::Array{T,2}
+    fact::Base.LinAlg.Cholesky{T,Array{T,2}}
+    BBSymMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
+end
+
+function assemble!{T<:Number}(Ag::BBSymMatrix{T}, Ae, m)
+
+    nm = length(m)
+    n1 = Ag.nbslv+1
+    for i = 1:nm
+        ig = m[i]
+        if ig < n1
+            for k = 1:nm
+                kg = m[k]
+                if kg < n1
+                    Ag.A[kg,ig] += Ae[k,i]
+                end
+            end
+        end
+    end
+end
+
+function trf!(Ag::BBSymMatrix)
+    Ag.fact = cholfact!(Ag.A)
+end
+trs!(Ag::BBSymMatrix, x) = A_ldiv_B!(Ag.fact, x) 
 
 "Global boundary-boundary symmetric tridiagonal matrices"
 type BBSymTri{T<:Number} <: BBSym
@@ -95,57 +124,6 @@ function assemble!{T}(Ag::BBSymTri{T}, Ae, m)
 
 end
 
-
-
-
-"Global boundary-boundary symmetric tridiagonal matrices"
-type BBSymTri2{T<:Number} <: BBSym
-    "Number of boundary modes"
-    nb::Int
-    "Number of boundary modes that should be solved"
-    nbslv::Int
-    "Diagonal elements of the matrix"
-    D::Array{T,1}
-    "Sub-diagonal elements"
-    E::Array{T,1}
-    function BBSymTri2(nb, nbslv)
-        D = zeros(T,nbslv)
-        E = zeros(T, max(nbslv-1,0))
-        new(nb, nbslv, D, E)
-    end
-end
-
-using Base.LinAlg.LAPACK.pttrf!
-using Base.LinAlg.LAPACK.pttrs!
-
-"LU (or Choleksy) decomposition of boundary-boundary system"
-trf!(Ag::BBSymTri2) = pttrf!(Ag.D, Ag.E)
-
-"Solving linear system using LU (or Cholesky) decomposition"
-trs!(Ag::BBSymTri2, x) = pttrs!(Ag.D, Ag.E, x)
-
-"""
-Assembles the global boundary-boundary matrix.
-"""
-function assemble!{T}(Ag::BBSymTri2{T}, Ae, m)
-    np1 = Ag.nbslv + 1
-    D = Ag.D
-    E = Ag.E
-
-    ig = m[1]
-    kg = m[2]
-
-    if ig < np1
-        D[ig] += Ae[1,1]
-        if kg < np1
-            D[kg] += Ae[2,2]
-            E[min(ig,kg)] += Ae[1,2]
-        end
-    elseif kg < np1
-        D[kg] += Ae[2,2]
-    end
-
-end
 
 
 "Global boundary-boundary tridiagonal matrices"
@@ -212,72 +190,6 @@ end
 trs!(Ag::BBTri, x) = A_ldiv_B!(Ag.fact, x)
 
 
-"Global boundary-boundary tridiagonal matrices"
-type BBTri2{T<:Number} <: BBSolver
-    "Number of boundary modes"
-    nb::Int
-    "Number of boundary modes that should be solved"
-    nbslv::Int
-    "Diagonal elements of the matrix"
-    D::Array{T,1}
-    "Lower sub-diagonal elements"
-    Dl::Array{T,1}
-    "Upper sub-diagonal elements"
-    Du::Array{T,1}
-    "Extra storage needed by Lapack"
-    Du2::Array{T,1}
-    "Pivoting array"
-    ipiv::Array{BlasInt,1}
-
-    """
-    Inner constructor. Du2 and ipiv are left undefined,
-    first the matrix must be assembled.
-    """
-    function BBTri2(nb, nbslv)
-        D = zeros(T,nbslv)
-        Dl = zeros(T, max(nbslv-1, 0))
-        Du = zeros(T, max(nbslv-1, 0))
-        new(nb, nbslv, D, Dl, Du)
-    end
-end
-
-
-function assemble!{T}(Ag::BBTri2{T}, Ae, m)
-    np1 = Ag.nbslv + 1
-    D = Ag.D
-    Dl = Ag.Dl
-    Du = Ag.Du
-
-
-    ig = m[1]
-    kg = m[2]
-
-    if ig < np1
-        D[ig] += Ae[1,1]
-        if kg < np1
-            D[kg] += Ae[2,2]
-            if ig < kg
-                Du[ig] += Ae[1,2]
-                Dl[ig] += Ae[2,1]
-            elseif kg < ig
-                Du[kg] = Ae[2,1]
-                Dl[kg] = Ae[1,2]
-            end
-        end
-    elseif kg < np1
-        D[kg] += Ae[2,2]
-    end
-
-end
-
-using Base.LinAlg.LAPACK.gttrf!
-using Base.LinAlg.LAPACK.gttrs!
-
-function trf!(Ag::BBTri2)
-    Dl, D, Du, Ag.Du2, Ag.ipiv = gttrf!(Ag.Dl, Ag.D, Ag.Du)
-    return
-end
-trs!(Ag::BBTri2, x) = gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, x)
 
 
 type BBTriP{T<:Number} <: BBSolver
