@@ -421,3 +421,136 @@ function trs!(Ag::BBSymTriP, x)
     end
     x
 end
+
+@enum MatType FULLMAT TRIMAT TRIPMAT
+
+"""
+Generic matrix interface for 1d problems.
+
+If the problem is very small, a full matrix will be used.
+If it is larger and periodic, a BBTriP will be used. 
+Else a BBTri is used.
+"""
+type BBMatrix1d{T<:Number} <: BBSolver
+    nb::Int
+    nbslv::Int
+    mtype::MatType
+    periodic::Bool
+    mat::BBMatrix{T}
+    tri::BBTri{T}
+    trip::BBTriP{T}
+    #BBMatrix1d(nb, nbslv, mtype, periodic) = new(nb, nbslv, mtype, periodic)
+    function BBMatrix1d(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+        periodic = false
+        if dof.bmap[1,1] == dof.bmap[2,end]
+            periodic = true
+        end
+        
+        
+        if nbslv <= 3
+            mtype = FULLMAT
+        elseif periodic == false
+            mtype = TRIMAT
+        else
+            mtype = TRIPMAT
+        end
+        
+        bb = new(nb, nbslv, mtype, periodic)
+
+        if mtype == FULLMAT
+            bb.mat = BBMatrix{T}(dof)
+        elseif mtype == TRIMAT
+            bb.tri = BBTri{T}(dof)
+        else
+            bb.trip = BBTriP{T}(dof)
+        end
+        
+        return bb
+    end
+end
+
+
+"""
+Generic symmetric matrix interface for 1d problems.
+
+If the problem is very small, a full matrix will be used.
+If it is larger and periodic, a BBSymTriP will be used. 
+Else a BBSymTri is used.
+"""
+type BBSymMatrix1d{T<:Number} <: BBSolver
+    nb::Int
+    nbslv::Int
+    mtype::MatType
+    periodic::Bool
+    mat::BBSymMatrix{T}
+    tri::BBSymTri{T}
+    trip::BBSymTriP{T}
+    function BBSymMatrix1d(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+        periodic = false
+        if dof.bmap[1,1] == dof.bmap[2,end]
+            periodic = true
+        end
+        
+        
+        if nbslv <= 3
+            mtype = FULLMAT
+        elseif periodic == false
+            mtype = TRIMAT
+        else
+            mtype = TRIPMAT
+        end
+        
+        bb = new(nb, nbslv, mtype, periodic)
+
+        if mtype == FULLMAT
+            bb.mat = BBSymMatrix{T}(dof)
+        elseif mtype == TRIMAT
+            bb.tri = BBSymTri{T}(dof)
+        else
+            bb.trip = BBSymTriP{T}(dof)
+        end
+        
+        return bb
+    end
+end
+
+
+
+function assemble!{T<:Number}(Ag::Union{BBMatrix1d{T},BBSymMatrix1d{T}}, Ae, m)
+    mt = Ag.mtype
+    if mt == FULLMAT
+        assemble!(Ag.mat, Ae, m)
+    elseif mt == TRIMAT
+        assemble!(Ag.tri, Ae, m)
+    else
+        assemble!(Ag.trip, Ae, m)
+    end
+    
+end
+
+function trf!(Ag::Union{BBMatrix1d,BBSymMatrix1d})
+    mt = Ag.mtype
+    if mt == FULLMAT
+        trf!(Ag.mat)
+    elseif mt == TRIMAT
+        trf!(Ag.tri)
+    else
+        trf!(Ag.trip)
+    end
+end
+
+function trs!(Ag::Union{BBMatrix1d,BBSymMatrix1d}, x) 
+    mt = Ag.mtype
+    if mt == FULLMAT
+        trs!(Ag.mat,x)
+    elseif mt == TRIMAT
+        trs!(Ag.tri,x)
+    else
+        trs!(Ag.trip,x)
+    end
+
+end
