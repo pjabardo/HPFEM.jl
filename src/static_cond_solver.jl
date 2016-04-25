@@ -35,7 +35,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     nel = num_elems(dof)
     nbslv  = nbslvmodes(dof)
     nb = nbmodes(dof)
-    Abb = Mat{T}(nb, nbslv)
+    Abb = Mat{T}(dof)
     Aii = Vector{Array{T,2}}(nel)
     M = Vector{Array{T,2}}(nel)
 

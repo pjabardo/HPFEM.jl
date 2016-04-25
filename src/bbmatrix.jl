@@ -6,7 +6,11 @@ type BBMatrix{T<:Number} <: BBSolver
     nbslv::Int
     A::Array{T,2}
     fact::Base.LinAlg.LU{T,Array{T,2}}
-    BBMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
+    function BBMatrix(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+        new(nb, nbslv, zeros(T, nbslv, nbslv))
+    end
 end
 
 function assemble!{T<:Number}(Ag::BBMatrix{T}, Ae, m)
@@ -41,7 +45,12 @@ type BBSymMatrix{T<:Number} <: BBSym
     nbslv::Int
     A::Array{T,2}
     fact::Base.LinAlg.Cholesky{T,Array{T,2}}
-    BBSymMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
+    function BBSymMatrix(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+        new(nb, nbslv, zeros(T, nbslv, nbslv))
+    end
+
 end
 
 function assemble!{T<:Number}(Ag::BBSymMatrix{T}, Ae, m)
@@ -82,7 +91,9 @@ type BBSymTri{T<:Number} <: BBSym
     "Factorization of symmetric tridiagonal matrix"
     fact:: LDLt{T,SymTridiagonal{T}}
     
-    function BBSymTri(nb, nbslv)
+    function BBSymTri(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
         D = zeros(T,nbslv)
         E = zeros(T, max(nbslv-1,0))
         tri = SymTridiagonal(D, E)
@@ -142,7 +153,9 @@ type BBTri{T<:Number} <: BBSolver
     """
     Inner constructor. First the matrix must be assembled.
     """
-    function BBTri(nb, nbslv)
+    function BBTri(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
         D = zeros(T,nbslv)
         Dl = zeros(T, max(nbslv-1, 0))
         Du = zeros(T, max(nbslv-1, 0))
@@ -210,7 +223,10 @@ type BBTriP{T<:Number} <: BBSolver
     tri::Tridiagonal{T}
     fact::LinAlg.LU{T,Tridiagonal{T}}
     
-    function BBTriP(nb, nbslv)
+    function BBTriP(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+
         nbslv = nb-1
         D = zeros(T,nbslv)
         Dl = zeros(T,nbslv-1)
@@ -319,7 +335,10 @@ type BBSymTriP{T<:Number} <: BBSym
     "Factorization of symmetric tridiagonal matrix"
     fact:: LDLt{T,SymTridiagonal{T}}
     
-    function BBSymTriP(nb, nbslv)
+    function BBSymTriP(dof::DofMap)
+        nb = nbmodes(dof)
+        nbslv = nbslvmodes(dof)
+
         nbslv = nb-1
         D = zeros(T,nb-1)
         Du = zeros(T,nb-2)
