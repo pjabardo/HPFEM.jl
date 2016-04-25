@@ -405,12 +405,18 @@ type BBSymTriP{T<:Number} <: BBSym
     an1::T
     cn::T
     cn1::T
+    "Tridiagonal Matrix"
+    tri::SymTridiagonal{T}
+    "Factorization of symmetric tridiagonal matrix"
+    fact:: LDLt{T,SymTridiagonal{T}}
+    
     function BBSymTriP(nb, nbslv)
         nbslv = nb-1
         D = zeros(T,nb-1)
         Du = zeros(T,nb-2)
         x2 = zeros(T,nb-1)
-        new(nb, nbslv, D, Du, x2, zero(T), zero(T), zero(T))
+        tri = SymTridiagonal(D, Du)
+        new(nb, nbslv, D, Du, x2, zero(T), zero(T), zero(T), tri)
     end
 end
 
@@ -464,7 +470,7 @@ end
 
 
 function trf!(Ag::BBSymTriP)
-    pttrf!(Ag.D, Ag.Du)
+    Ag.fact = ldltfact!(Ag.tri)
     return
 end
 function trs!(Ag::BBSymTriP, x)
@@ -472,13 +478,13 @@ function trs!(Ag::BBSymTriP, x)
     n1 = n-1
     qn1 = sub(x, 1:n1, :)
     nrhs = size(x,2)
-    pttrs!(Ag.D, Ag.Du, qn1)
+    A_ldiv_B!(Ag.fact, qn1)
     x2 = Ag.x2
     for i = 1:nrhs
         fill!(x2, 0)
         x2[1] = -Ag.cn1
         x2[n1] = -Ag.cn
-        pttrs!(Ag.D, Ag.Du, x2)
+        A_ldiv_B!(Ag.fact, x2)
         x[n,i] = (x[n,i] - Ag.cn1*qn1[1,i] - Ag.cn*qn1[n1,i]) /
             (Ag.an1 + Ag.cn1*x2[1] + Ag.cn*x2[n1])
         for k = 1:n1
