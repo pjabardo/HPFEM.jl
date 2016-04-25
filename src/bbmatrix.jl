@@ -298,15 +298,17 @@ type BBTriP{T<:Number} <: BBSolver
     bn1::T
     cn::T
     cn1::T
-    Du2::Vector{T}
-    ipiv::Vector{BlasInt}
+    tri::Tridiagonal{T}
+    fact::LinAlg.LU{T,Tridiagonal{T}}
+    
     function BBTriP(nb, nbslv)
         nbslv = nb-1
         D = zeros(T,nbslv)
         Dl = zeros(T,nbslv-1)
         Du = zeros(T,nbslv-1)
         x2 = zeros(T,nbslv)
-        new(nb, nbslv, Dl, D, Du, x2, zero(T), zero(T), zero(T), zero(T), zero(T))
+        tri = Tridiagonal(Dl, D, Du)
+        new(nb, nbslv, Dl, D, Du, x2, zero(T), zero(T), zero(T), zero(T), zero(T), tri)
         
     end
             
@@ -362,8 +364,7 @@ end
                     
 
 function trf!(Ag::BBTriP)
-    Dl, D, Du, Ag.Du2, Ag.ipiv = gttrf!(Ag.Dl, Ag.D, Ag.Du)
-
+    Ag.fact = lufact!(Ag.tri)
     return
 end
 function trs!(Ag::BBTriP, x)
@@ -371,13 +372,13 @@ function trs!(Ag::BBTriP, x)
     n1 = n-1
     qn1 = sub(x, 1:n1, :)
     nrhs = size(x,2)
-    gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, qn1)
+    A_ldiv_B!(Ag.fact, qn1)
     x2 = Ag.x2
     for i = 1:nrhs
         fill!(x2, 0)
         x2[1] = -Ag.b1
         x2[n1] = -Ag.cn
-        gttrs!('N', Ag.Dl, Ag.D, Ag.Du, Ag.Du2, Ag.ipiv, x2)
+        A_ldiv_B!(Ag.fact, x2)
         x[n,i] = (x[n,i] - Ag.cn1*qn1[1,i] - Ag.bn1*qn1[n1,i]) /
             (Ag.an1 + Ag.cn1*x2[1] + Ag.bn1*x2[n1])
         for k = 1:n1
