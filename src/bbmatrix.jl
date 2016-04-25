@@ -1,12 +1,10 @@
 "Abstract type that deals with global boundary-boundary matrices"
 abstract BBSolver
-using Base.LinAlg.LAPACK.BlasInt
 
 type BBMatrix{T<:Number} <: BBSolver
     nb::Int
     nbslv::Int
     A::Array{T,2}
-    #ipiv::Array{BlasInt,1}
     fact::Base.LinAlg.LU{T,Array{T,2}}
     BBMatrix(nb, nbslv) = new(nb, nbslv, zeros(T, nbslv, nbslv))
 end
@@ -142,8 +140,7 @@ type BBTri{T<:Number} <: BBSolver
     tri::Tridiagonal{T}
     fact::Base.LinAlg.LU{T,Tridiagonal{T}}
     """
-    Inner constructor. Du2 and ipiv are left undefined,
-    first the matrix must be assembled.
+    Inner constructor. First the matrix must be assembled.
     """
     function BBTri(nb, nbslv)
         D = zeros(T,nbslv)
