@@ -65,9 +65,9 @@ nbslvmodes(dof::DofMap) = dof.nbslv
 num_elems(dof::DofMap) = dof.nel
 
 "Total number of interior modes"
-ninodes(dof::DofMap1d) = dof.nel * dof.nie
+ninodes(dof::DofMap1d) = dof.nel * ninterior(dof.lmap)
 "Total number of interior modes"
-ninterior(dof::DofMap1d) = dof.nel * dof.nie
+ninterior(dof::DofMap1d) = dof.nel * ninterior(dof.lmap)
 
 "Total number of modes not in Dirichilet BCs (interior and boundary modes)"
 nslvmodes(dof::DofMap1d) = nbslvmodes(dof) + ninodes(dof)
@@ -142,8 +142,8 @@ function DofMap1d(lmap, nnodes, idir, iper=false)
     return DofMap1d(nel, nb, nd, lmap, bmap, idir)
 end
 
-num_be(dof::DofMap, e) = dof.nbe
-num_ie(dof::DofMap, e) = dof.nie
+num_be(dof::DofMap, e) = nbndry(dof.lmap)
+num_ie(dof::DofMap, e) = ninterior(dof.lmap)
 
 bmap(dof, e) = sub(dof.bmap, :, e)
 
