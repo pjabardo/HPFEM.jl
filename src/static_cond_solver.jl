@@ -11,6 +11,7 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     dof::Dof
     Abb::Mat
     Aii::Vector{Matrix{T}}
+    Aiifact::Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}
     M::Vector{Matrix{T}}
     ub::Vector{T}
     Fi::Matrix{T}
@@ -37,6 +38,7 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     nb = nbmodes(dof)
     Abb = Mat{T}(dof)
     Aii = Vector{Array{T,2}}(nel)
+    Aiifact = Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}(nel)
     M = Vector{Array{T,2}}(nel)
 
     lmap = locmap(dof)
@@ -50,14 +52,14 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     end
     ub = zeros(T, nbslv)
     lft = Dict{Int,DirichiletLift}()
-    CholeskySC(dof, Abb, Aii, M, ub, Fi, lft, false)
+    CholeskySC(dof, Abb, Aii, Aiifact, M, ub, Fi, lft, false)
     
 end
 
-using Base.LinAlg.BLAS.gemm!
-using Base.LinAlg.BLAS.gemv!
-using Base.LinAlg.LAPACK.potrf!
-using Base.LinAlg.LAPACK.potrs!
+#using Base.LinAlg.BLAS.gemm!
+#using Base.LinAlg.BLAS.gemv!
+#using Base.LinAlg.LAPACK.potrf!
+#using Base.LinAlg.LAPACK.potrs!
 
 function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, e::Integer,
                                                     Ae::AbstractMatrix{T})
@@ -74,15 +76,17 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
             Aii[k,i] = Ae[ ii[k], ii[i] ]
         end
     end
-    potrf!('L', Aii)
-
+    #potrf!('L', Aii)
+    fact = cholfact!(Aii)
+    solver.Aiifact[e] = fact
     M = solver.M[e]
     for k = 1:nb
         for i = 1:ni
             M[i,k] = Ae[ii[i],ib[k]]
         end
     end
-    potrs!('L', Aii, M)
+    #potrs!('L', Aii, M)
+    A_ldiv_B!(fact, M)
 
     Abb = Ae[ib,ib]
     Abi = Ae[ib,ii]
@@ -162,7 +166,8 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
             end
         end
         Fie = sub(solver.Fi, :, e)
-        potrs!('L', solver.Aii[e], Fie)
+        #potrs!('L', solver.Aii[e], Fie)
+        A_ldiv_B!(solver.Aiifact[e], Fie)
         gemv!('N', -one(T), solver.M[e], Fbe, one(T), Fie)
 
         for i = 1:nbe

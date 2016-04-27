@@ -1,6 +1,6 @@
 
-abstract BasisFun
-abstract BasisFun1d <: BasisFun
+abstract BasisFun{T<:Number}
+abstract BasisFun1d{T<:Number} <: BasisFun{T}
 
 " Total number of modes of a basis function "
 nmodes{T<:BasisFun}(b::T) = b.nmodes
@@ -58,7 +58,7 @@ call{T<:BasisFun1d, N<:Number}(b::T, ξ::AbstractArray{N}, p::Integer) = basis1d
 """
 Karniadakis/Sherwin 1D modal polynomial basis.
 """
-immutable ModalC01d <: BasisFun1d
+immutable ModalC01d{T<:Number} <: BasisFun1d{T}
     nmodes::Int
     lnum::LocalNumSys1d
 end
@@ -82,7 +82,7 @@ end
 """
 Legendre orthogonal basis
 """
-immutable Legendre1d <: BasisFun1d
+immutable Legendre1d{T<:Number} <: BasisFun1d{T}
     nmodes::Int
     lnum::LocalNumSys1d
 end

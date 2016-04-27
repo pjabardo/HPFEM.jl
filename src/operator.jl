@@ -120,7 +120,7 @@ end
 
 # RHS
 
-function add_rhs!{T<:Number}(bas::GenBasis1d, el::Element1d, f::AbstractVector{T},
+function add_rhs!{T<:Number}(bas::GenBasis1d{T}, el::Element1d{T}, f::AbstractVector{T},
                             Fe::AbstractVector{T})
 
     wJ = jacweights(el)
@@ -139,7 +139,7 @@ function add_rhs!{T<:Number}(bas::GenBasis1d, el::Element1d, f::AbstractVector{T
 end
 
 
-function add_rhs!{T<:Number}(bas::SEM1d{T}, el::Element1d, f::AbstractVector{T},
+function add_rhs!{T<:Number}(bas::SEM1d{T}, el::Element1d{T}, f::AbstractVector{T},
                             Fe::AbstractVector{T})
 
     wJ = jacweights(el)

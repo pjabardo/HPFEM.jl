@@ -2,10 +2,10 @@
 
 
 " Generic basis "
-abstract GenBasis
+abstract GenBasis{T<:Number}
 
 " Generic 1d basis "
-abstract GenBasis1d <: GenBasis
+abstract GenBasis1d{T<:Number} <: GenBasis{T}
 
 """
 Structure that stores 1d Basis function information.
@@ -16,7 +16,7 @@ which in the case of 1D domains is the interval (-1,1).
 This type stores the information obtained from the combination
 of a set of basis functions and a set of quadrature rules.
 """
-type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d
+type Basis1d{T<:Number,B<:BasisFun1d} <: GenBasis1d{T}
     "Number of modes"
     M::Int
 
