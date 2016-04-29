@@ -17,6 +17,9 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     Fi::Matrix{T}
     lft::Dict{Int,DirichiletLift}
     decomp::Bool
+    Abbe::Matrix{T}
+    Abie::Matrix{T}
+    fbe::Vector{T}
 end
 
 bbmatrix(solver::CholeskySC) = solver.Abb
@@ -52,7 +55,10 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     end
     ub = zeros(T, nbslv)
     lft = Dict{Int,DirichiletLift}()
-    CholeskySC(dof, Abb, Aii, Aiifact, M, ub, Fi, lft, false)
+    Abbe = zeros(T, nbe, nbe)
+    Abie = zeros(T, nbe, nie)
+    fbe = zeros(T, nbe)
+    CholeskySC(dof, Abb, Aii, Aiifact, M, ub, Fi, lft, false, Abbe, Abie, fbe)
     
 end
 
@@ -85,11 +91,22 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
             M[i,k] = Ae[ii[i],ib[k]]
         end
     end
-    #potrs!('L', Aii, M)
-    A_ldiv_B!(fact, M)
 
-    Abb = Ae[ib,ib]
-    Abi = Ae[ib,ii]
+    A_ldiv_B!(fact, M)
+    Abb = solver.Abbe
+    Abi = solver.Abie
+    for i in 1:nb
+        for k in 1:nb
+            Abb[k,i] = Ae[ib[k], ib[i]]
+        end
+    end
+    
+    for i in 1:ni
+        for k in 1:nb
+            Abi[k,i] = Ae[ib[k], ii[i]]
+        end
+    end
+            
     gemm!('N', 'N', -one(T), Abi, M, one(T), Abb)
 
     if hasdirbc(dof, e)
@@ -113,14 +130,13 @@ function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::Abstra
 
     nbe = nbndry(lmap)
     nie = ninterior(lmap)
-    
     Fb = solver.ub
     nb = nbmodes(dof)
     nbslv = nbslvmodes(dof)
     for i = 1:nbslv
         Fb[i] = zero(T)
     end
-    Fbe = zeros(T, nbe)
+    Fbe = solver.fbe 
     for e = 1:nel
 
         Fie = sub(solver.Fi, :, e)
