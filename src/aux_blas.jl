@@ -7,10 +7,8 @@ import Base.LinAlg.BLAS.gemm
 
 function gemv!{T<:Number}(trans::Char, alpha, A::AbstractMatrix{T},
                           x::AbstractVector{T}, beta, y::AbstractVector{T})
-
     trans = uppercase(trans)
-    o = one(T)
-    z = zero(T)
+
     info = 0
     M = size(A,1)
     N = size(A,2)
@@ -22,11 +20,8 @@ function gemv!{T<:Number}(trans::Char, alpha, A::AbstractMatrix{T},
     elseif N < 0
         info = 3
     end
-
-    noconj = false
-    if trans=='T'
-        noconj = true
-    end
+    
+    noconj = trans=='T'
     
     
     if M==0 || N==0 || (alpha==0 && beta==1)
@@ -62,7 +57,7 @@ function gemv!{T<:Number}(trans::Char, alpha, A::AbstractMatrix{T},
     if trans=='N'
 
         for j = 1:N
-            if x[j] != z
+            if x[j] != zero(T)
                 temp = alpha * x[j]
                 for i = 1:M
                     y[i] +=  temp*A[i,j]
@@ -92,7 +87,7 @@ function gemv!{T<:Number}(trans::Char, alpha, A::AbstractMatrix{T},
 end
 
 function gemv{T<:Number}(trans::Char, alpha, A::AbstractMatrix{T},x::AbstractVector{T})
-    gemv!(trans, one(T), A, x, zero(T), similar(x, T, size(A, (trans=='N'?1:2))))
+    gemv!(trans, alpha, A, x, zero(T), similar(x, T, size(A, (trans=='N'?1:2))))
 end
 
 
