@@ -78,7 +78,7 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
 
     Aii = solver.Aii[e]
     for i = 1:ni
-        for k = 1:ni
+        for k = 1:ni 
             Aii[k,i] = Ae[ ii[k], ii[i] ]
         end
     end

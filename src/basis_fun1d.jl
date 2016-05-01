@@ -62,7 +62,7 @@ immutable ModalC01d{T<:Number} <: BasisFun1d{T}
     nmodes::Int
     lnum::LocalNumSys1d
 end
-ModalC01d(n) = ModalC01d(n, LocalNumSys1d([1,2], [3:n;]))
+ModalC01d{T<:Number}(n, ::Type{T}=Float64) = ModalC01d{T}(n, LocalNumSys1d([1,2], [3:n;]))
 
 isbndryint(b::ModalC01d) = true
 isbndryint(::Type{ModalC01d}) = true

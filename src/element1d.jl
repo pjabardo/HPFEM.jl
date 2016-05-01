@@ -30,8 +30,8 @@ function Element1d{T<:Number}(id, a::T, b::T, bas::GenBasis1d)
         
         for i = 1:Q
             J[i] = d
-            x[i] = (1-ξ[i])*a/2 + (1 + ξ[i])*b/2
-            dξdx[i] = 1/d
+            x[i] = (one(T)-ξ[i])*a/2 + (one(T) + ξ[i])*b/2
+            dξdx[i] = one(T)/d
             wJ[i] = w[i] * d
         end
     end
