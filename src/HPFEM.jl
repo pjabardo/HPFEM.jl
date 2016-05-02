@@ -3,6 +3,8 @@ module HPFEM
 using Jacobi
 using Base.LinAlg
 using Polynomials
+using JuBLAS
+
 
 import Base.length
 import Base.call
@@ -12,7 +14,7 @@ import Base.size
 
 include("mesh1d.jl")
 include("localnum.jl")
-include("aux_blas.jl")
+
 include("basis_fun1d.jl")
 include("quadrature1d.jl")
 include("basis1d.jl")
