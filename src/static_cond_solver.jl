@@ -11,7 +11,8 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     dof::Dof
     Abb::Mat
     Aii::Vector{Matrix{T}}
-    Aiifact::Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}
+    #Aiifact::Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}
+    Aiifact::Vector{Base.LinAlg.LU{T,Array{T,2}}}
     M::Vector{Matrix{T}}
     ub::Vector{T}
     Fi::Matrix{T}
@@ -41,7 +42,8 @@ function CholeskySC{T<:Number, Mat<:BBSolver, Dof <: DofMap}(dof::Dof, ::Type{Ma
     nb = nbmodes(dof)
     Abb = Mat{T}(dof)
     Aii = Vector{Array{T,2}}(nel)
-    Aiifact = Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}(nel)
+    #Aiifact = Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}(nel)
+    Aiifact = Vector{Base.LinAlg.LU{T,Array{T,2}}}(nel)
     M = Vector{Array{T,2}}(nel)
 
     lmap = locmap(dof)
@@ -83,7 +85,8 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
         end
     end
     #potrf!('L', Aii)
-    fact = cholfact!(Aii)
+    #fact = cholfact!(Aii)
+    fact = lufact!(Aii)
     solver.Aiifact[e] = fact
     M = solver.M[e]
     for k = 1:nb
