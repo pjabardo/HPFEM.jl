@@ -11,7 +11,6 @@ type CholeskySC{T <: Number, Mat<:BBSolver, Dof <: DofMap} <: StaticCond
     dof::Dof
     Abb::Mat
     Aii::Vector{Matrix{T}}
-    #Aiifact::Vector{Base.LinAlg.Cholesky{T,Array{T,2}}}
     Aiifact::Vector{Base.LinAlg.LU{T,Array{T,2}}}
     M::Vector{Matrix{T}}
     ub::Vector{T}
@@ -69,8 +68,8 @@ end
 #using Base.LinAlg.LAPACK.potrf!
 #using Base.LinAlg.LAPACK.potrs!
 
-function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, e::Integer,
-                                                    Ae::AbstractMatrix{T})
+function add_local_matrix{T<:Number}(solver::CholeskySC{T}, e::Integer,
+                                     Ae::AbstractMatrix{T})
     dof = dofmap(solver)
     lmap = locmap(dof)
     nb = nbndry(lmap)
@@ -120,7 +119,7 @@ function add_local_matrix{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, 
 end
 
 
-function solve!{Mat<:BBSolver, T<:Number}(solver::CholeskySC{T, Mat}, Fe::AbstractMatrix{T})
+function solve!{T<:Number}(solver::CholeskySC{T}, Fe::AbstractMatrix{T})
     if !solver.decomp
         trf!(solver)
         solver.decomp = true
