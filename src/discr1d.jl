@@ -1,17 +1,18 @@
-abstract GenFunction
-abstract GenFunction1d
+abstract GenFunction{T<:Number}
+abstract GenFunction1d{T<:Number}
 
-abstract H1Space
+abstract Discr{T<:Number}
 
-type H1Space1d{T<:Number, B<:GenBasis1d} <: H1Space
+type Discr1d{T<:Number, B<:GenBasis1d, Dof<:DofMap} <: Discr
     bas::B{T}
+    dof::Dof
     nnodes::Int
     nel::Int
     nodes::Vector{T}
     elems::Vector{Element1d}
 end
 
-function H1Space1d{T<:Number, B<:GenBasis1d}(B{T}, nodes::Vector{T})
+function Discr1d{T<:Number, B<:GenBasis1d}(B{T}, msh::Mesh1d{)
     nnodes = length(nodes)
     nel = nnodes - 1
     
@@ -26,7 +27,7 @@ call(f::Constant1d, x) = f.val
 getindex(f::Constant1d, x, i) = f.val
 
 
-immutable Fun1d{Callable, T<:Number} <: GenFunction1d
+immutable Fun1d{T<:Number, } <: GenFunction1d
     fun::Callable
 end
 
