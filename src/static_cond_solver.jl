@@ -141,7 +141,7 @@ function solve!{T<:Number}(solver::CholeskySC{T}, Fe::AbstractMatrix{T})
     Fbe = solver.fbe 
     for e = 1:nel
 
-        Fie = sub(solver.Fi, :, e)
+        Fie = view(solver.Fi, :, e)
 
         for i = 1:nbe
             Fbe[i] = Fe[ib[i],e]
@@ -183,7 +183,7 @@ function solve!{T<:Number}(solver::CholeskySC{T}, Fe::AbstractMatrix{T})
                 Fbe[i] = Fe[ib[i],e]
             end
         end
-        Fie = sub(solver.Fi, :, e)
+        Fie = view(solver.Fi, :, e)
         #potrs!('L', solver.Aii[e], Fie)
         A_ldiv_B!(solver.Aiifact[e], Fie)
         gemv!('N', -one(T), solver.M[e], Fbe, one(T), Fie)

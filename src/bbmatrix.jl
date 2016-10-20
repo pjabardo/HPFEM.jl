@@ -295,7 +295,7 @@ end
 function trs!(Ag::BBTriP, x)
     n = Ag.nb
     n1 = n-1
-    qn1 = sub(x, 1:n1, :)
+    qn1 = view(x, 1:n1, :)
     nrhs = size(x,2)
     A_ldiv_B!(Ag.fact, qn1)
     x2 = Ag.x2
@@ -404,7 +404,7 @@ end
 function trs!(Ag::BBSymTriP, x)
     n = Ag.nb
     n1 = n-1
-    qn1 = sub(x, 1:n1, :)
+    qn1 = view(x, 1:n1, :)
     nrhs = size(x,2)
     A_ldiv_B!(Ag.fact, qn1)
     x2 = Ag.x2

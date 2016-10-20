@@ -145,7 +145,7 @@ end
 num_be(dof::DofMap, e) = nbndry(dof.lmap)
 num_ie(dof::DofMap, e) = ninterior(dof.lmap)
 
-bmap(dof, e) = sub(dof.bmap, :, e)
+bmap(dof, e) = view(dof.bmap, :, e)
 
 function global2local(dof::DofMap, xg::Array{Float64,1})
 

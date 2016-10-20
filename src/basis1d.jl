@@ -67,7 +67,7 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     
     for k = 1:m
         for i=1:Q
-            ϕ[i,k] = b(ξ[i], k)
+            ϕ[i,k] = basis1d(b, ξ[i], k)
             wϕ[i,k] = w[i] * ϕ[i,k]
         end
     end
@@ -78,7 +78,7 @@ function Basis1d{T<:Number, B<:BasisFun1d}(b::B, q::QuadType, ::Type{T}=Float64)
     # calcular a matrix de massa
     mass = ϕ' * wϕ #std_mass_matrix1d(ϕ, w)
     
-    imass = cholfact(mass)
+    imass = cholfact(Hermitian(mass))
     Basis1d{T,B}(m, Q, ξ, w, D, ϕ, dϕ, wϕ, imass, b)
 end
 
