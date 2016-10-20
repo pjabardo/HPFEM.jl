@@ -51,9 +51,7 @@ end
 
 
 basis1d{T<:BasisFun1d}(b::T, ξ::AbstractArray, p::Integer) = basis1d!(b, ξ, similar(ξ), p)
-    
-call{T<:BasisFun1d, N<:Number}(b::T, ξ::N, p::Integer) = basis1d(b, ξ, p)
-call{T<:BasisFun1d, N<:Number}(b::T, ξ::AbstractArray{N}, p::Integer) = basis1d(b, ξ, p)
+
 
 """
 Karniadakis/Sherwin 1D modal polynomial basis.

@@ -115,7 +115,7 @@ basis1d(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
 basis1d!(b::GenBasis1d, x::AbstractArray, y::AbstractArray, p) = basis1d!(basis(b), x, y, p)
 basis1d(b::GenBasis1d, x::AbstractArray, p) = basis1d!(b, x, similar(x), p)
 
-call(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
+#call(b::GenBasis1d, x, p) = basis1d(basis(b), x, p)
 
 Basis1d(m::Int, q::Int) = Basis1d(ModalC01d(m), QuadType(q))
 Basis1d(m::Int) = Basis1d(m, m+1)

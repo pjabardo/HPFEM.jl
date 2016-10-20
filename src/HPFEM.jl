@@ -14,7 +14,6 @@ import Base.size
 
 include("mesh1d.jl")
 include("localnum.jl")
-
 include("basis_fun1d.jl")
 include("quadrature1d.jl")
 include("basis1d.jl")

@@ -2,7 +2,7 @@
 abstract AbstractMesh
 abstract AbstractMesh1d <: AbstractMesh
 
-typealias BCnames Vector{UTF8String}
+typealias BCnames Vector{String}
 """
 Stores an ordered 1D mesh
 """
@@ -64,7 +64,7 @@ function Mesh1d{T<:Real}(x::AbstractVector{T}, bcs=[])
         throw(DimensionMismatch("There should be at most one BC for each end of the domain"))
     end
     
-    bcs2 = UTF8String[utf8(b) for b in bcs]
+    bcs2 = String[utf8(b) for b in bcs]
 
     neigh = zeros(Int, 2, nel)
 
